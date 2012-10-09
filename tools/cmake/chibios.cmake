@@ -158,5 +158,13 @@ macro(add_chibios_executable name)
     # set its extension to ".elf"
     set_target_properties(${name} PROPERTIES SUFFIX ".elf")
 
+    # include OpenOCD scripts
+    if(OPENOCD_TARGET AND OPENOCD_BOARD)
+        include("${CHIBIOS_CMAKE_DIR}/openocd.cmake")
+
+        # add a flash target
+        add_flash_target(${name} "${OPENOCD_BOARD}" "${OPENOCD_TARGET}")
+    endif()
+
 endmacro()
 
