@@ -11,8 +11,6 @@ set(CHIBIOS_SRC
 
     ${CHIBIOS_ROOT}/ext/fatfs/src/ff.c
     ${CHIBIOS_ROOT}/ext/fatfs/src/option/ccsbcs.c
-
-    ${CHIBIOS_ROOT}/tools/syscalls_newlib_fatfs.c
 )
 
 include_directories(${CHIBIOS_ROOT}/ext/fatfs/src)
