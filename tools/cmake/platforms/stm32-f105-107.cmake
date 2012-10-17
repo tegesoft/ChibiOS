@@ -10,14 +10,14 @@ stm32_enable_feature(GPT)
 stm32_enable_feature(ICU)
 stm32_enable_feature(MAC)
 stm32_enable_feature(PWM)
-stm32_enable_feature(SERIAL)
 stm32_enable_feature(SDC)
+stm32_enable_feature(SERIAL)
 stm32_enable_feature(SPI)
 stm32_enable_feature(GPIOv1)
 stm32_enable_feature(I2Cv1)
+stm32_enable_feature(OTGv1)
 stm32_enable_feature(RTCv1)
 stm32_enable_feature(USARTv1)
-stm32_enable_feature(OTGv1)
 
 # F105/F107 specific source files
 set(CHIBIOS_SRC
