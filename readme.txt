@@ -83,6 +83,20 @@
 *****************************************************************************
 
 *** 2.5.1 ***
+- FIX: Fixed compilation issue in chregistry.c (bug 3576776).
+- FIX: Fixed compilation issue in syscalls.c (bug 3576771)(backported
+  to 2.4.3).
+- FIX: Fixed Typos in STM32F0xx EXT driver (bug 3576193).
+- FIX: Fixed STM32F10X_CL: Wrong CAN1 interrupt number definitions (bug
+  3575766).
+- FIX: Fixed superfluous pack #defines cause nasty warning (bug 3575662)
+  (backported to 2.4.3).
+- FIX: Fixed mac.c won't compile due to misplaced declarations (bug 3575657)
+  (backported to 2.4.3).
+- FIX: Fixed STM32F4 ADC prescaler incorrectly initialized (bug 3575297)
+  (backported to 2.4.3).
+- FIX: Fixed RCC_APB2ENR_IOPEEN undeclared on STM32F10X_LD_VL devices (bug
+  3575098)(backported to 2.4.3).
 - FIX: Fixed misplaced declarations in lwip_bindings sys_arch.c (bug 3571053)
   (backported to 2.4.3).
 - FIX: Fixed double definition of sd1fel and sd2fel breaks Posix simulator
