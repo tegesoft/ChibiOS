@@ -47,8 +47,7 @@ macro(add_flash_target target_to_flash board target)
                 -f ${OPENOCD_BOARD_CFG}
                 -c \"init\"
                 -c \"reset init\"
-                -c \"${target} mass_erase 0\"
-                -c \"flash write_image ${TARGET_LOCATION}\"
+                -c \"flash write_image erase ${TARGET_LOCATION}\"
                 -c \"shutdown\"
             )
             add_custom_target(flash-${target_to_flash} ${OPENOCD_EXE} ${OPENOCD_ARGS} DEPENDS ${target_to_flash})
