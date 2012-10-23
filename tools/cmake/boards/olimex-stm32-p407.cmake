@@ -6,6 +6,3 @@ include(${CHIBIOS_CMAKE_DIR}/ports/gcc/stm32-f4xx.cmake)
 
 # path to the board files
 set(CHIBIOS_BOARD_PATH "${CHIBIOS_ROOT}/boards/OLIMEX_STM32_P407")
-
-# openocd flags
-set(OPENOCD_TARGET "stm32f2x")
