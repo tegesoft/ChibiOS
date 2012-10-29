@@ -44,7 +44,7 @@
  * @name    Platform identification
  * @{
  */
-#define PLATFORM_NAME           "STM32F1 Connectivity Line"
+#define PLATFORM_NAME           "STM32F10x Connectivity Line"
 /** @} */
 
 /**
@@ -886,7 +886,7 @@
 #elif (STM32_SW == STM32_SW_HSE)
 #define STM32_SYSCLK                STM32_HSECLK
 #else
-#error "invalid STM32_SYSCLK_SW value specified"
+#error "invalid STM32_SW value specified"
 #endif
 
 /* Check on the system clock.*/

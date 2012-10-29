@@ -20,11 +20,13 @@
 
 /**
  * @file    STM32F4xx/hal_lld.c
- * @brief   STM32F4xx HAL subsystem low level driver source.
+ * @brief   STM32F4xx/STM32F2xx HAL subsystem low level driver source.
  *
  * @addtogroup HAL
  * @{
  */
+
+/* TODO: LSEBYP like in F3.*/
 
 #include "ch.h"
 #include "hal.h"
@@ -140,9 +142,13 @@ void stm32_clock_init(void) {
   RCC->APB1ENR = RCC_APB1ENR_PWREN;
 
   /* PWR initialization.*/
+#if defined(STM32F4XX) || defined(__DOXYGEN__)
   PWR->CR = STM32_VOS;
   while ((PWR->CSR & PWR_CSR_VOSRDY) == 0)
     ;                           /* Waits until power regulator is stable.   */
+#else
+  PWR->CR = 0;
+#endif
 
   /* Initial clocks setup and wait for HSI stabilization, the MSI clock is
      always enabled because it is the fallback clock when PLL the fails.*/
@@ -151,12 +157,14 @@ void stm32_clock_init(void) {
     ;                           /* Waits until HSI is stable.               */
 
 #if STM32_HSE_ENABLED
+  /* HSE activation.*/
 #if defined(STM32_HSE_BYPASS)
   /* HSE Bypass.*/
-  RCC->CR |= RCC_CR_HSEBYP;
-#endif
-  /* HSE activation.*/
+  RCC->CR |= RCC_CR_HSEON | RCC_CR_HSEBYP;
+#else
+  /* No HSE Bypass.*/
   RCC->CR |= RCC_CR_HSEON;
+#endif
   while ((RCC->CR & RCC_CR_HSERDY) == 0)
     ;                           /* Waits until HSE is stable.               */
 #endif
@@ -181,7 +189,8 @@ void stm32_clock_init(void) {
 
 #if STM32_ACTIVATE_PLL
   /* PLL activation.*/
-  RCC->PLLCFGR = STM32_PLLQ | STM32_PLLSRC | STM32_PLLP | STM32_PLLN | STM32_PLLM;
+  RCC->PLLCFGR = STM32_PLLQ | STM32_PLLSRC | STM32_PLLP | STM32_PLLN |
+                 STM32_PLLM;
   RCC->CR |= RCC_CR_PLLON;
   while (!(RCC->CR & RCC_CR_PLLRDY))
     ;                           /* Waits until PLL is stable.               */

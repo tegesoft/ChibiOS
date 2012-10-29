@@ -34,8 +34,7 @@
   |  |  |  +--STM32/    - Drivers for STM32 platform (common).
   |  |  |  +--STM32F0xx/- Drivers for STM32F0xx platform.
   |  |  |  +--STM32F1xx/- Drivers for STM32F1xx platform.
-  |  |  |  +--STM32F2xx/- Drivers for STM32F2xx platform.
-  |  |  |  +--STM32F4xx/- Drivers for STM32F4xx platform.
+  |  |  |  +--STM32F4xx/- Drivers for STM32F4xx/STM32F2xx platforms.
   |  |  |  +--STM32L1xx/- Drivers for STM32L1xx platform.
   |  |  |  +--STM8L/    - Drivers for STM8L platform.
   |  |  |  +--STM8S/    - Drivers for STM8S platform.
@@ -83,6 +82,16 @@
 *****************************************************************************
 
 *** 2.5.1 ***
+- FIX: Fixed double chSysInit() call in MSP430F1611 demo (bug 3581304)
+  (backported to 2.2.10 and 2.4.3).
+- FIX: Fixed patch for various demos (bug 3579734).
+- FIX: Fixed bug in abstract file interface (bug 3579660)(backported to
+  2.2.10 and 2.4.3).
+- FIX: Fixed wrong type for UART config registers (bug 3579434).
+- FIX: Fixed various typos and wrong limits in the STM32F4/F2 HAL driver
+  (bug 3578944)(backported to 2.4.3).
+- FIX: Fixed ARM CMx crt0.c fails at low optimization levels (bug 3578927)
+  (backported to 2.4.3).
 - FIX: Fixed compilation issue in chregistry.c (bug 3576776).
 - FIX: Fixed compilation issue in syscalls.c (bug 3576771)(backported
   to 2.4.3).
@@ -117,6 +126,8 @@
   (backported to 2.4.3).
 - FIX: Fixed STM8L, cosmic compiler: c_lreg not saved (bug 3566342)(backported
   to 2.2.10 and 2.4.3).
+- NEW: Unified the STM32F4xx and STM32F2xx platform code. The STM32F2xx now is
+  only supported as an STM32F4xx variant and not tested separately.
 - NEW: Updated STM32F1, F2, F4, L1 ADC drivers to allow HW triggering.
 - NEW: Added a new option STM32_ETH1_CHANGE_PHY_STATE to the STM32 MAC driver,
   this change is connected to bug 3570335.
