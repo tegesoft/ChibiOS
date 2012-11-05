@@ -19,13 +19,13 @@
 */
 
 /**
- * @file    GCC/ARMCMx/STM32F4xx/cmparams.h
- * @brief   ARM Cortex-M4 parameters for the STM32F4xx.
+ * @file    GCC/ARMCMx/SAM4L/cmparams.h
+ * @brief   ARM Cortex-M4 parameters for the ATSAM4L.
  *
- * @defgroup ARMCMx_STM32F4xx STM32F4xx Specific Parameters
+ * @defgroup ARMCMx_SAM4L ATSAM4L Specific Parameters
  * @ingroup ARMCMx_SPECIFIC
  * @details This file contains the Cortex-M4 specific parameters for the
- *          STM32F4xx platform.
+ *          ATSAM4L platform.
  * @{
  */
 
@@ -50,7 +50,7 @@
 /**
  * @brief   Floating Point unit presence.
  */
-#define CORTEX_HAS_FPU          TRUE
+#define CORTEX_HAS_FPU          FALSE
 
 /**
  * @brief   Number of bits in priority masks.
