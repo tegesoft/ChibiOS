@@ -492,11 +492,7 @@ const WCHAR Tbl[] = {	/*  CP1258(0x80-0xFF) to Unicode conversion table */
 
 #endif
 
-
-#if !_TBLDEF || !_USE_LFN
-#error This file is not needed in current configuration. Remove from the project.
-#endif
-
+#if _TBLDEF && _USE_LFN
 
 WCHAR ff_convert (	/* Converted character, Returns zero on error */
 	WCHAR	src,	/* Character code to be converted */
@@ -538,3 +534,5 @@ WCHAR ff_wtoupper (	/* Upper converted character */
 
 	return tbl_lower[i] ? tbl_upper[i] : chr;
 }
+
+#endif /* _TBLDEF && _USE_LFN */

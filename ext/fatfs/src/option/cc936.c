@@ -7,9 +7,7 @@
 #include "../ff.h"
 
 
-#if !_USE_LFN || _CODE_PAGE != 936
-#error This file is not needed in current configuration. Remove from the project.
-#endif
+#if _USE_LFN && _CODE_PAGE == 936
 
 static
 const WCHAR uni2oem[] = {
@@ -10971,3 +10969,5 @@ WCHAR ff_wtoupper (	/* Upper converted character */
 
 	return tbl_lower[i] ? tbl_upper[i] : chr;
 }
+
+#endif /* _USE_LFN && _CODE_PAGE == 936 */

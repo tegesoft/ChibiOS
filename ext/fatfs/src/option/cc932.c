@@ -8,10 +8,7 @@
 
 #define _TINY_TABLE	0
 
-#if !_USE_LFN || _CODE_PAGE != 932
-#error This file is not needed in current configuration. Remove from the project.
-#endif
-
+#if _USE_LFN && _CODE_PAGE == 932
 
 static
 const WCHAR uni2sjis[] = {
@@ -3796,3 +3793,5 @@ WCHAR ff_wtoupper (	/* Upper converted character */
 
 	return tbl_lower[i] ? tbl_upper[i] : chr;
 }
+
+#endif /* _USE_LFN && _CODE_PAGE == 932 */
