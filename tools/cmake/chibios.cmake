@@ -161,5 +161,11 @@ macro(add_chibios_executable name)
     # set its extension to ".elf"
     set_target_properties(${name} PROPERTIES SUFFIX ".elf")
 
+    # generate an Intel HEX file out of the ELF target
+    add_custom_command(TARGET ${name} POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} --strip-all --output-target ihex ${name}.elf ${name}.hex
+        COMMENT "Generate Intel HEX file: ${name}.hex"
+    )
+
 endmacro()
 
