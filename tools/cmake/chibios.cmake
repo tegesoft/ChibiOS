@@ -1,3 +1,6 @@
+# make sure the CHIBIOS_SRC variable is empty
+set(CHIBIOS_SRC)
+
 # extract the root directory of the ChibiOs CMake files
 get_filename_component(CHIBIOS_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
