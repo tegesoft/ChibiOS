@@ -20,11 +20,10 @@
 
 #include "ch.h"
 #include "hal.h"
-//#include "test.h"
+#include "test.h"
 
 /*
- * This is a periodic thread that does absolutely nothing except flashing
- * a LED.
+ * This is a periodic thread that does absolutely nothing except flashing LEDs.
  */
 static WORKING_AREA(waThread1, 128);
 static msg_t Thread1(void *arg) {
@@ -32,11 +31,30 @@ static msg_t Thread1(void *arg) {
   (void)arg;
   chRegSetThreadName("blinker");
   while (TRUE) {
-      /* TODO */
-//    palSetPad(GPIOD, GPIOD_LED3);       /* Orange.  */
-    chThdSleepMilliseconds(500);
-//    palClearPad(GPIOD, GPIOD_LED3);     /* Orange.  */
-    chThdSleepMilliseconds(500);
+    palSetPad(GPIOE, GPIOE_LED3_RED);
+    chThdSleepMilliseconds(125);
+    palClearPad(GPIOE, GPIOE_LED3_RED);
+    palSetPad(GPIOE, GPIOE_LED5_ORANGE);
+    chThdSleepMilliseconds(125);
+    palClearPad(GPIOE, GPIOE_LED5_ORANGE);
+    palSetPad(GPIOE, GPIOE_LED7_GREEN);
+    chThdSleepMilliseconds(125);
+    palClearPad(GPIOE, GPIOE_LED7_GREEN);
+    palSetPad(GPIOE, GPIOE_LED9_BLUE);
+    chThdSleepMilliseconds(125);
+    palClearPad(GPIOE, GPIOE_LED9_BLUE);
+    palSetPad(GPIOE, GPIOE_LED10_RED);
+    chThdSleepMilliseconds(125);
+    palClearPad(GPIOE, GPIOE_LED10_RED);
+    palSetPad(GPIOE, GPIOE_LED8_ORANGE);
+    chThdSleepMilliseconds(125);
+    palClearPad(GPIOE, GPIOE_LED8_ORANGE);
+    palSetPad(GPIOE, GPIOE_LED6_GREEN);
+    chThdSleepMilliseconds(125);
+    palClearPad(GPIOE, GPIOE_LED6_GREEN);
+    palSetPad(GPIOE, GPIOE_LED4_BLUE);
+    chThdSleepMilliseconds(125);
+    palClearPad(GPIOE, GPIOE_LED4_BLUE);
   }
 }
 
@@ -55,7 +73,13 @@ int main(void) {
   halInit();
   chSysInit();
 
-  /* TODO: inialize serial driver 1 or 2 */
+  /*
+   * Activates the serial driver 1 using the driver default configuration.
+   * PA9(TX) and PA10(RX) are routed to USART1.
+   */
+  sdStart(&SD1, NULL);
+  palSetPadMode(GPIOA, 9, PAL_MODE_ALTERNATE(7));
+  palSetPadMode(GPIOA, 10, PAL_MODE_ALTERNATE(7));
 
   /*
    * Creates the example thread.
@@ -68,9 +92,8 @@ int main(void) {
    * pressed the test procedure is launched.
    */
   while (TRUE) {
-    /* TODO */
-//    if (palReadPad(GPIOA, GPIOA_BUTTON))
-//      TestThread(&SD2);
+    if (palReadPad(GPIOA, GPIOA_BUTTON))
+      TestThread(&SD1);
     chThdSleepMilliseconds(500);
   }
 }

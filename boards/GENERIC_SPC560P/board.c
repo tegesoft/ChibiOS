@@ -1,29 +1,23 @@
 /*
-    ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
-
-    This file is part of ChibiOS/RT.
-
-    ChibiOS/RT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-
-    ChibiOS/RT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Licensed under ST Liberty SW License Agreement V2, (the "License");
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *        http://www.st.com/software_license_agreement_liberty_v2
+ *
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "ch.h"
 #include "hal.h"
 
 #if HAL_USE_PAL || defined(__DOXYGEN__)
 /* Initial setup of all defined pads, the list is terminated by a {0, 0}.*/
-static const spc560p_siu_init_t spc560p_siu_init[] = {
+static const spc_siu_init_t spc_siu_init[] = {
   {PCR(PB, PB_LIN0_TDX), PAL_HIGH, PAL_MODE_OUTPUT_ALTERNATE(1)},
   {PCR(PB, PB_LIN0_RDX), PAL_HIGH, PAL_MODE_INPUT},
   {PCR(PD, PD_BUTTON1),  PAL_LOW,  PAL_MODE_INPUT},
@@ -38,7 +32,7 @@ static const spc560p_siu_init_t spc560p_siu_init[] = {
 };
 
 /* Initialization array for the PSMI registers.*/
-static const uint8_t spc560p_padsels_init[SPC5_SIU_NUM_PADSELS] = {
+static const uint8_t spc_padsels_init[SPC5_SIU_NUM_PADSELS] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0
@@ -47,11 +41,10 @@ static const uint8_t spc560p_padsels_init[SPC5_SIU_NUM_PADSELS] = {
 /**
  * @brief   PAL setup.
  */
-const PALConfig pal_default_config =
-{
+const PALConfig pal_default_config = {
   PAL_MODE_UNCONNECTED,             /* Default mode for all undefined pads. */
-  spc560p_siu_init,
-  spc560p_padsels_init
+  spc_siu_init,
+  spc_padsels_init
 };
 #endif
 
@@ -62,7 +55,12 @@ const PALConfig pal_default_config =
  */
 void __early_init(void) {
 
-  spc560p_clock_init();
+  spc_clock_init();
+
+  /* SWT disabled.*/
+  SWT.SR.R = 0xC520;
+  SWT.SR.R = 0xD928;
+  SWT.CR.R = 0xFF00000A;
 }
 
 /*

@@ -19,7 +19,7 @@
 */
 
 /**
- * @file    STM32/serial_lld.h
+ * @file    STM32/USARTv2/serial_lld.h
  * @brief   STM32 low level serial driver header.
  *
  * @addtogroup SERIAL
@@ -252,7 +252,9 @@ typedef struct {
   uint8_t                   ob[SERIAL_BUFFERS_SIZE];                        \
   /* End of the mandatory fields.*/                                         \
   /* Pointer to the USART registers block.*/                                \
-  USART_TypeDef             *usart;
+  USART_TypeDef             *usart;                                         \
+  /* Clock frequency for the associated USART/UART.*/                       \
+  uint32_t                  clock;
 
 /*===========================================================================*/
 /* Driver macros.                                                            */

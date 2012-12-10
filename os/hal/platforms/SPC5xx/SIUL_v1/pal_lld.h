@@ -1,22 +1,16 @@
 /*
-    ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
-
-    This file is part of ChibiOS/RT.
-
-    ChibiOS/RT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-
-    ChibiOS/RT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Licensed under ST Liberty SW License Agreement V2, (the "License");
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *        http://www.st.com/software_license_agreement_liberty_v2
+ *
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 /**
  * @file    SPC5xx/SIU_v1//pal_lld.h
@@ -153,7 +147,7 @@ typedef struct {
   uint8_t                   pcr_index;
   uint8_t                   gpdo_value;
   iomode_t                  pcr_value;
-} spc560p_siu_init_t;
+} spc_siu_init_t;
 
 /**
  * @brief   Generic I/O ports static initializer.
@@ -166,7 +160,7 @@ typedef struct {
  */
 typedef struct {
   iomode_t                  default_mode;
-  const spc560p_siu_init_t  *inits;
+  const spc_siu_init_t      *inits;
   const uint8_t             *padsels;
 } PALConfig;
 
@@ -175,24 +169,44 @@ typedef struct {
 /*===========================================================================*/
 
 /**
- * @brief   I/O port 1 identifier.
+ * @brief   I/O port A identifier.
  */
 #define PA              0
 
 /**
- * @brief   I/O port 2 identifier.
+ * @brief   I/O port B identifier.
  */
 #define PB              1
 
 /**
- * @brief   I/O port 3 identifier.
+ * @brief   I/O port C identifier.
  */
 #define PC              2
 
 /**
- * @brief   I/O port 4 identifier.
+ * @brief   I/O port D identifier.
  */
 #define PD              3
+
+/**
+ * @brief   I/O port E identifier.
+ */
+#define PE              4
+
+/**
+ * @brief   I/O port F identifier.
+ */
+#define PF              5
+
+/**
+ * @brief   I/O port G identifier.
+ */
+#define PG              6
+
+/**
+ * @brief   I/O port H identifier.
+ */
+#define PH              7
 
 /*===========================================================================*/
 /* Implementation, some of the following macros could be implemented as      */

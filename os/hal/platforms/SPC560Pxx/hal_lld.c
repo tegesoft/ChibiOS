@@ -1,22 +1,16 @@
 /*
-    ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
-
-    This file is part of ChibiOS/RT.
-
-    ChibiOS/RT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-
-    ChibiOS/RT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Licensed under ST Liberty SW License Agreement V2, (the "License");
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *        http://www.st.com/software_license_agreement_liberty_v2
+ *
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 /**
  * @file    SPC560Pxx/hal_lld.c
@@ -50,7 +44,7 @@
  *
  * @isr
  */
-CH_IRQ_HANDLER(vector127) {
+CH_IRQ_HANDLER(vector59) {
 
   CH_IRQ_PROLOGUE();
 
@@ -59,7 +53,7 @@ CH_IRQ_HANDLER(vector127) {
   chSysUnlockFromIsr();
 
   /* Resets the PIT channel 3 IRQ flag.*/
-  PIT.CH[3].TFLG.R = 1;
+  PIT.CH[0].TFLG.R = 1;
 
   CH_IRQ_EPILOGUE();
 }
@@ -79,7 +73,7 @@ void hal_lld_init(void) {
 
   /* The system is switched to the RUN0 mode, the default for normal
      operations.*/
-  if (halSPC560PSetRunMode(SPC5_RUNMODE_RUN0) == CH_FAILED)
+  if (halSPCSetRunMode(SPC5_RUNMODE_RUN0) == CH_FAILED)
     chSysHalt();
 
   /* INTC initialization, software vector mode, 4 bytes vectors, starting
@@ -88,18 +82,18 @@ void hal_lld_init(void) {
   INTC.CPR.R        = 0;
   INTC.IACKR.R      = (uint32_t)_vectors;
 
-  /* PIT channel 3 initialization for Kernel ticks, the PIT is configured
+  /* PIT channel 0 initialization for Kernel ticks, the PIT is configured
      to run in DRUN,RUN0...RUN3 and HALT0 modes, the clock is gated in other
      modes.*/
-  INTC.PSR[127].R   = SPC5_PIT3_IRQ_PRIORITY;
-  halSPC560PSetPeripheralClockMode(92,
-                                   SPC5_ME_PCTL_RUN(2) | SPC5_ME_PCTL_LP(2));
-  reg = halSPC560PGetSystemClock() / CH_FREQUENCY - 1;
+  INTC.PSR[59].R    = SPC5_PIT0_IRQ_PRIORITY;
+  halSPCSetPeripheralClockMode(92,
+                               SPC5_ME_PCTL_RUN(2) | SPC5_ME_PCTL_LP(2));
+  reg = halSPCGetSystemClock() / CH_FREQUENCY - 1;
   PIT.PITMCR.R      = 1;        /* PIT clock enabled, stop while debugging. */
-  PIT.CH[3].LDVAL.R = reg;
-  PIT.CH[3].CVAL.R  = reg;
-  PIT.CH[3].TFLG.R  = 1;        /* Interrupt flag cleared.                  */
-  PIT.CH[3].TCTRL.R = 3;        /* Timer active, interrupt enabled.         */
+  PIT.CH[0].LDVAL.R = reg;
+  PIT.CH[0].CVAL.R  = reg;
+  PIT.CH[0].TFLG.R  = 1;        /* Interrupt flag cleared.                  */
+  PIT.CH[0].TCTRL.R = 3;        /* Timer active, interrupt enabled.         */
 }
 
 /**
@@ -110,7 +104,7 @@ void hal_lld_init(void) {
  *
  * @special
  */
-void spc560p_clock_init(void) {
+void spc_clock_init(void) {
 
   /* Waiting for IRC stabilization before attempting anything else.*/
   while (!ME.GS.B.S_RC)
@@ -166,7 +160,7 @@ void spc560p_clock_init(void) {
 
   /* Switches again to DRUN mode (current mode) in order to update the
      settings.*/
-  if (halSPC560PSetRunMode(SPC5_RUNMODE_DRUN) == CH_FAILED)
+  if (halSPCSetRunMode(SPC5_RUNMODE_DRUN) == CH_FAILED)
     chSysHalt();
 
   /* CFLASH settings calculated for a maximum clock of 64MHz.*/
@@ -187,7 +181,7 @@ void spc560p_clock_init(void) {
  * @retval CH_SUCCESS   if the switch operation has been completed.
  * @retval CH_FAILED    if the switch operation failed.
  */
-bool_t halSPC560PSetRunMode(spc560prunmode_t mode) {
+bool_t halSPCSetRunMode(spc560prunmode_t mode) {
 
   /* Starts a transition process.*/
   ME.MCTL.R = SPC5_ME_MCTL_MODE(mode) | SPC5_ME_MCTL_KEY;
@@ -216,7 +210,7 @@ bool_t halSPC560PSetRunMode(spc560prunmode_t mode) {
  *
  * @notapi
  */
-void halSPC560PSetPeripheralClockMode(uint32_t  n, uint32_t pctl) {
+void halSPCSetPeripheralClockMode(uint32_t  n, uint32_t pctl) {
   uint32_t mode;
 
   ME.PCTL[n].R = pctl;
@@ -231,7 +225,7 @@ void halSPC560PSetPeripheralClockMode(uint32_t  n, uint32_t pctl) {
  *
  * @return              The system clock in Hertz.
  */
-uint32_t halSPC560PGetSystemClock(void) {
+uint32_t halSPCGetSystemClock(void) {
   uint32_t sysclk;
 
   sysclk = ME.GS.B.S_SYSCLK;

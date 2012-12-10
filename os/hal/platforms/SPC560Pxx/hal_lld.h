@@ -1,22 +1,16 @@
 /*
-    ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
-
-    This file is part of ChibiOS/RT.
-
-    ChibiOS/RT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-
-    ChibiOS/RT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Licensed under ST Liberty SW License Agreement V2, (the "License");
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *        http://www.st.com/software_license_agreement_liberty_v2
+ *
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 /**
  * @file    SPC560Pxx/hal_lld.h
@@ -136,15 +130,15 @@
  * @{
  */
 #define SPC5_ME_ME_RESET            (1U << 0)
-#define SPC5_ME_ME_TEST             (2U << 0)
-#define SPC5_ME_ME_SAFE             (4U << 0)
-#define SPC5_ME_ME_DRUN             (8U << 0)
-#define SPC5_ME_ME_RUN0             (16U << 0)
-#define SPC5_ME_ME_RUN1             (32U << 0)
-#define SPC5_ME_ME_RUN2             (64U << 0)
-#define SPC5_ME_ME_RUN3             (128U << 0)
-#define SPC5_ME_ME_HALT0            (256U << 0)
-#define SPC5_ME_ME_STOP0            (1024U << 0)
+#define SPC5_ME_ME_TEST             (1U << 1)
+#define SPC5_ME_ME_SAFE             (1U << 2)
+#define SPC5_ME_ME_DRUN             (1U << 3)
+#define SPC5_ME_ME_RUN0             (1U << 4)
+#define SPC5_ME_ME_RUN1             (1U << 5)
+#define SPC5_ME_ME_RUN2             (1U << 6)
+#define SPC5_ME_ME_RUN3             (1U << 7)
+#define SPC5_ME_ME_HALT0            (1U << 8)
+#define SPC5_ME_ME_STOP0            (1U << 10)
 /** @} */
 
 /**
@@ -153,11 +147,11 @@
  */
 #define SPC5_ME_MC_SYSCLK_MASK      (15U << 0)
 #define SPC5_ME_MC_SYSCLK(n)        ((n) << 0)
-#define SPC5_ME_MC_SYSCLK_IRC               SPC5_ME_MC_SYSCLK(0)
-#define SPC5_ME_MC_SYSCLK_XOSC              SPC5_ME_MC_SYSCLK(2)
-#define SPC5_ME_MC_SYSCLK_FMPLL0            SPC5_ME_MC_SYSCLK(4)
-#define SPC5_ME_MC_SYSCLK_FMPLL1            SPC5_ME_MC_SYSCLK(5)
-#define SPC5_ME_MC_SYSCLK_DISABLED          SPC5_ME_MC_SYSCLK(15)
+#define SPC5_ME_MC_SYSCLK_IRC       SPC5_ME_MC_SYSCLK(0)
+#define SPC5_ME_MC_SYSCLK_XOSC      SPC5_ME_MC_SYSCLK(2)
+#define SPC5_ME_MC_SYSCLK_FMPLL0    SPC5_ME_MC_SYSCLK(4)
+#define SPC5_ME_MC_SYSCLK_FMPLL1    SPC5_ME_MC_SYSCLK(5)
+#define SPC5_ME_MC_SYSCLK_DISABLED  SPC5_ME_MC_SYSCLK(15)
 #define SPC5_ME_MC_IRCON            (1U << 4)
 #define SPC5_ME_MC_XOSC0ON          (1U << 5)
 #define SPC5_ME_MC_PLL0ON           (1U << 6)
@@ -582,12 +576,12 @@
 #endif
 
 /**
- * @brief   PIT channel 3 IRQ priority.
+ * @brief   PIT channel 0 IRQ priority.
  * @note    This PIT channel is allocated permanently for system tick
  *          generation.
  */
-#if !defined(SPC5_PIT3_IRQ_PRIORITY) || defined(__DOXYGEN__)
-#define SPC5_PIT3_IRQ_PRIORITY              4
+#if !defined(SPC5_PIT0_IRQ_PRIORITY) || defined(__DOXYGEN__)
+#define SPC5_PIT0_IRQ_PRIORITY              4
 #endif
 
 /*===========================================================================*/
@@ -720,11 +714,11 @@ typedef enum {
 extern "C" {
 #endif
   void hal_lld_init(void);
-  void spc560p_clock_init(void);
-  bool_t halSPC560PSetRunMode(spc560prunmode_t mode);
-  void halSPC560PSetPeripheralClockMode(uint32_t n, uint32_t pctl);
+  void spc_clock_init(void);
+  bool_t halSPCSetRunMode(spc560prunmode_t mode);
+  void halSPCSetPeripheralClockMode(uint32_t n, uint32_t pctl);
 #if !SPC5_NO_INIT
-  uint32_t halSPC560PGetSystemClock(void);
+  uint32_t halSPCGetSystemClock(void);
 #endif
 #ifdef __cplusplus
 }

@@ -82,6 +82,27 @@
 *****************************************************************************
 
 *** 2.5.1 ***
+- FIX: Compilation issue with HAL_USE_RTC disabled (bug 3594083) (backported
+  to 2.4.3).
+- FIX: Wasting of BKP registers in RTCv1 driver (bug 3594005) (backported
+  to 2.4.3).
+- FIX: Potential problem with RTC_CRL_RSF bit (bug 3593972) (backported
+  to 2.4.3).
+- FIX: Fixed DMA reconfiguration problem in STM32 SPI driver (bug 3592809)
+  (backported to 2.4.3).
+- FIX: Fixed wrong stack initializations in GCC STM32L1xx port files (bug
+  3591321)(backported to 2.4.3).
+- FIX: Fixed different redefinition for __main_stack_end__ symbol (bug
+  3591317)(backported to 2.4.3).
+- FIX: Fixed errors in STM32F0xx UART driver (bug 3589412)(backported
+  to 2.4.3).
+- FIX: Fixed MSP430 port_switch code for MSPGCC issue (bug 3587633)(backported
+  to 2.4.3).
+- FIX: Fixed workaround for errata in STM32F4-A devices (bug 3586425)
+  (backported to 2.4.3).
+- FIX: Fixed error in palWritePad() macro (bug 3586230)(backported to 2.2.10
+  and 2.4.3).
+- FIX: Fixed missing ; in testmbox.c (bug 3585979)(backported to 2.4.3).
 - FIX: Fixed STM32F4xx: Wrong CAN1 SCE interrupt number definition (bug
   3581571).
 - FIX: Fixed STM32_P407: implement mmc_lld_is_card_inserted (bug 3581929)
@@ -130,6 +151,10 @@
   (backported to 2.4.3).
 - FIX: Fixed STM8L, cosmic compiler: c_lreg not saved (bug 3566342)(backported
   to 2.2.10 and 2.4.3).
+- NEW: Initial support for STM32F30x (HAL, PAL, CAN, GPT, ICU, PWM, Serial,
+  SPI, USB).
+- NEW: AT91SAM7A3 I2C support.
+- NEW: AT91SAM7A3 basic support.
 - NEW: Unified the STM32F4xx and STM32F2xx platform code. The STM32F2xx now is
   only supported as an STM32F4xx variant and not tested separately.
 - NEW: Updated STM32F1, F2, F4, L1 ADC drivers to allow HW triggering.
@@ -149,6 +174,11 @@
   ARMCMx port, now it can support multiple core types.
 - NEW: Updated the Power Architecture rules.mk file to put object and listing
   files into a ./build directory like ARM ports already do.
+- CHANGE: The STM32 Serial driver has been split in two distinct versions,
+  one for older devices up the STM32F4xx, the other for new devices starting
+  from the STM32F0xx.
+  (TODO: Update IAR and Keil projects because different paths, update
+         documentation projects).
 
 *** 2.5.0 ***
 - FIX: Fixed anomaly in USB enumeration (bug 3565325)(backported to 2.4.3).

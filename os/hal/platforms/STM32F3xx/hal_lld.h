@@ -170,18 +170,18 @@
 #define STM32_PPRE1_DIV8        (6 << 8)    /**< HCLK divided by 8.         */
 #define STM32_PPRE1_DIV16       (7 << 8)    /**< HCLK divided by 16.        */
 
-#define STM32_PPRE2_DIV1        (0 << 8)    /**< HCLK divided by 1.         */
-#define STM32_PPRE2_DIV2        (4 << 8)    /**< HCLK divided by 2.         */
-#define STM32_PPRE2_DIV4        (5 << 8)    /**< HCLK divided by 4.         */
-#define STM32_PPRE2_DIV8        (6 << 8)    /**< HCLK divided by 8.         */
-#define STM32_PPRE2_DIV16       (7 << 8)    /**< HCLK divided by 16.        */
+#define STM32_PPRE2_DIV1        (0 << 11)   /**< HCLK divided by 1.         */
+#define STM32_PPRE2_DIV2        (4 << 11)   /**< HCLK divided by 2.         */
+#define STM32_PPRE2_DIV4        (5 << 11)   /**< HCLK divided by 4.         */
+#define STM32_PPRE2_DIV8        (6 << 11)   /**< HCLK divided by 8.         */
+#define STM32_PPRE2_DIV16       (7 << 11)   /**< HCLK divided by 16.        */
 
 #define STM32_PLLSRC_HSI        (0 << 16)   /**< PLL clock source is HSI/2. */
 #define STM32_PLLSRC_HSE        (1 << 16)   /**< PLL clock source is
                                                  HSE/PREDIV.                */
 
-#define STM32_USBPRE_DIV1       (0 << 22)   /**< USB clock is PLLCLK/1.     */
-#define STM32_USBPRE_DIV1P5     (1 << 22)   /**< USB clock is PLLCLK/1.5.   */
+#define STM32_USBPRE_DIV1P5     (0 << 22)   /**< USB clock is PLLCLK/1.5.   */
+#define STM32_USBPRE_DIV1       (1 << 22)   /**< USB clock is PLLCLK/1.     */
 
 #define STM32_MCOSEL_NOCLOCK    (0 << 24)   /**< No clock on MCO pin.       */
 #define STM32_MCOSEL_LSI        (2 << 24)   /**< LSI clock on MCO pin.      */
@@ -544,7 +544,7 @@
  *          a 8MHz crystal using the PLL.
  */
 #if !defined(STM32_PLLMUL_VALUE) || defined(__DOXYGEN__)
-#define STM32_PLLMUL_VALUE                  8
+#define STM32_PLLMUL_VALUE                  9
 #endif
 
 /**
@@ -567,7 +567,7 @@
  * @brief   APB2 prescaler value.
  */
 #if !defined(STM32_PPRE2) || defined(__DOXYGEN__)
-#define STM32_PPRE2                         STM32_PPRE2_DIV1
+#define STM32_PPRE2                         STM32_PPRE2_DIV2
 #endif
 
 /**
@@ -1287,8 +1287,8 @@ typedef uint32_t halrtcnt_t;
 /*===========================================================================*/
 
 /* STM32 ISR, DMA and RCC helpers.*/
-/*#include "stm32_isr.h"
-#include "stm32_dma.h"*/
+#include "stm32_isr.h"
+#include "stm32_dma.h"
 #include "stm32_rcc.h"
 
 #ifdef __cplusplus
