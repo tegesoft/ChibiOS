@@ -166,6 +166,7 @@ macro(add_chibios_executable name)
         COMMAND ${CMAKE_OBJCOPY} --strip-all --output-target ihex ${name}.elf ${name}.hex
         COMMENT "Generate Intel HEX file: ${name}.hex"
     )
+    set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${name}.hex)
 
 endmacro()
 
