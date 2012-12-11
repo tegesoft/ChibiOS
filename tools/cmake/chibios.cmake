@@ -162,11 +162,15 @@ macro(add_chibios_executable name)
     set_target_properties(${name} PROPERTIES SUFFIX ".elf")
 
     # generate an Intel HEX file out of the ELF target
+    get_property(L_TARGET_LOCATION TARGET ${name} PROPERTY LOCATION)
+    get_filename_component(L_TARGET_PATH "${L_TARGET_LOCATION}" PATH)
+    get_filename_component(L_TARGET_NAME_WE "${L_TARGET_LOCATION}" NAME_WE)
+    get_filename_component(L_TARGET_NAME "${L_TARGET_LOCATION}" NAME)
     add_custom_command(TARGET ${name} POST_BUILD
-        COMMAND ${CMAKE_OBJCOPY} --strip-all --output-target ihex ${name}.elf ${name}.hex
-        COMMENT "Generate Intel HEX file: ${name}.hex"
+        COMMAND ${CMAKE_OBJCOPY} --strip-all --output-target ihex "${L_TARGET_PATH}/${L_TARGET_NAME}" "${L_TARGET_PATH}/${L_TARGET_NAME_WE}.hex"
+        COMMENT "Generate Intel HEX file: ${L_TARGET_PATH}/${L_TARGET_NAME_WE}.hex"
     )
-    set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${name}.hex)
+    set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${L_TARGET_PATH}/${L_TARGET_NAME_WE}.hex")
 
 endmacro()
 
