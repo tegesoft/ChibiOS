@@ -161,6 +161,15 @@ macro(add_chibios_executable name)
     # set its extension to ".elf"
     set_target_properties(${name} PROPERTIES SUFFIX ".elf")
 
+    # define the linker script to use for the target
+    get_property(L_LINK_FLAGS TARGET ${name} PROPERTY LINK_FLAGS)
+    if(LINKER_SCRIPT)
+        set(L_LINK_FLAGS "${L_LINK_FLAGS} -T${LINKER_SCRIPT}")
+    else()
+        set(L_LINK_FLAGS "${L_LINK_FLAGS} -T${DEFAULT_LINKER_SCRIPT}")
+    endif()
+    set_target_properties(${name} PROPERTIES LINK_FLAGS ${L_LINK_FLAGS})
+
     # generate an Intel HEX file out of the ELF target
     get_property(L_TARGET_LOCATION TARGET ${name} PROPERTY LOCATION)
     get_filename_component(L_TARGET_PATH "${L_TARGET_LOCATION}" PATH)
