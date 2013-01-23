@@ -77,7 +77,7 @@
 /**
  * @brief   ADC1 driver enable switch.
  * @details If set to @p TRUE the support for ADC1 is included.
- * @note    The default is @p TRUE.
+ * @note    The default is @p FALSE.
  */
 #if !defined(STM32_ADC_USE_ADC1) || defined(__DOXYGEN__)
 #define STM32_ADC_USE_ADC1                  FALSE
@@ -289,7 +289,7 @@ struct ADCDriver {
    */
   ADC_TypeDef               *adc;
   /**
-   * @brief Pointer to associated SMA channel.
+   * @brief Pointer to associated DMA channel.
    */
   const stm32_dma_stream_t  *dmastp;
   /**

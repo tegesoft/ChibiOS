@@ -74,6 +74,24 @@
 #define STM32_CAN_CAN1_IRQ_PRIORITY         11
 
 /*
+ * EXT driver system settings.
+ */
+#define STM32_EXT_EXTI0_IRQ_PRIORITY        6
+#define STM32_EXT_EXTI1_IRQ_PRIORITY        6
+#define STM32_EXT_EXTI2_IRQ_PRIORITY        6
+#define STM32_EXT_EXTI3_IRQ_PRIORITY        6
+#define STM32_EXT_EXTI4_IRQ_PRIORITY        6
+#define STM32_EXT_EXTI5_9_IRQ_PRIORITY      6
+#define STM32_EXT_EXTI10_15_IRQ_PRIORITY    6
+#define STM32_EXT_EXTI16_IRQ_PRIORITY       6
+#define STM32_EXT_EXTI17_IRQ_PRIORITY       6
+#define STM32_EXT_EXTI18_IRQ_PRIORITY       6
+#define STM32_EXT_EXTI19_IRQ_PRIORITY       6
+#define STM32_EXT_EXTI20_23_IRQ_PRIORITY    6
+#define STM32_EXT_EXTI30_32_IRQ_PRIORITY    6
+#define STM32_EXT_EXTI33_IRQ_PRIORITY       6
+
+/*
  * GPT driver system settings.
  */
 #define STM32_GPT_USE_TIM1                  FALSE
@@ -143,6 +161,20 @@
 #define STM32_SPI_SPI2_IRQ_PRIORITY         10
 #define STM32_SPI_SPI3_IRQ_PRIORITY         10
 #define STM32_SPI_DMA_ERROR_HOOK(spip)      chSysHalt()
+
+/*
+ * UART driver system settings.
+ */
+#define STM32_UART_USE_USART1               FALSE
+#define STM32_UART_USE_USART2               FALSE
+#define STM32_UART_USE_USART3               FALSE
+#define STM32_UART_USART1_IRQ_PRIORITY      12
+#define STM32_UART_USART2_IRQ_PRIORITY      12
+#define STM32_UART_USART3_IRQ_PRIORITY      12
+#define STM32_UART_USART1_DMA_PRIORITY      0
+#define STM32_UART_USART2_DMA_PRIORITY      0
+#define STM32_UART_USART3_DMA_PRIORITY      0
+#define STM32_UART_DMA_ERROR_HOOK(uartp)    chSysHalt()
 
 /*
  * USB driver system settings.

@@ -588,6 +588,13 @@
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
 
+/*
+ * Configuration-related checks.
+ */
+#if !defined(SPC560Pxx_MCUCONF)
+#error "Using a wrong mcuconf.h file, SPC560Pxx_MCUCONF not defined"
+#endif
+
 /* Check on the XOSC frequency.*/
 #if (SPC5_XOSC_CLK < SPC5_XOSC_CLK_MIN) ||                                  \
     (SPC5_XOSC_CLK > SPC5_XOSC_CLK_MAX)
@@ -700,7 +707,7 @@ typedef enum {
   SPC5_RUNMODE_RUN3  = 7,
   SPC5_RUNMODE_HALT0 = 8,
   SPC5_RUNMODE_STOP0 = 10
-} spc560prunmode_t;
+} spc5_runmode_t;
 
 /*===========================================================================*/
 /* Driver macros.                                                            */
@@ -715,7 +722,7 @@ extern "C" {
 #endif
   void hal_lld_init(void);
   void spc_clock_init(void);
-  bool_t halSPCSetRunMode(spc560prunmode_t mode);
+  bool_t halSPCSetRunMode(spc5_runmode_t mode);
   void halSPCSetPeripheralClockMode(uint32_t n, uint32_t pctl);
 #if !SPC5_NO_INIT
   uint32_t halSPCGetSystemClock(void);

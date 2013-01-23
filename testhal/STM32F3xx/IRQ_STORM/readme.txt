@@ -13,7 +13,8 @@ drivers in order to implement a system stress demo.
 
 ** Board Setup **
 
-None.
+- Connect an RS232 transceiver to pins PA9(TX) and PA10(RX).
+- Connect a terminal emulator to the transceiver (38400-N-8-1).
 
 ** Build Procedure **
 

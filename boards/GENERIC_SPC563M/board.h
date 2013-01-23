@@ -1,58 +1,57 @@
 /*
-    ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
-
-    This file is part of ChibiOS/RT.
-
-    ChibiOS/RT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-
-    ChibiOS/RT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Licensed under ST Liberty SW License Agreement V2, (the "License");
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *        http://www.st.com/software_license_agreement_liberty_v2
+ *
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #ifndef _BOARD_H_
 #define _BOARD_H_
 
 /*
- * Setup for a generic SPC563M proto board.
+ * Setup for a generic SPC563Mxx proto board.
  */
 
 /*
  * Board identifiers.
  */
 #define BOARD_GENERIC_SPC563M
-#define BOARD_NAME "Generic SPC563M"
+#define BOARD_NAME                  "Generic SPC563Mxx"
 
 /*
  * Board frequencies.
  */
-#if !defined(EXTCLK)
-#define EXTCLK          8000000
+#if !defined(SPC5_XOSC_CLK)
+#define SPC5_XOSC_CLK               8000000
 #endif
 
 /*
  * I/O definitions.
  */
-#define GPIO_SCI_A_TX   89
-#define GPIO_SCI_A_RX   90
+#define P5_ESCI_A_TX                9
+#define P5_ESCI_A_RX                10
 
-#define GPIO_BUTTON1    179
-#define GPIO_BUTTON2    181
-#define GPIO_BUTTON3    183
-#define GPIO_BUTTON4    187
+#define P11_BUTTON1                 3
+#define P11_BUTTON2                 5
+#define P11_BUTTON3                 7
+#define P11_BUTTON4                 9
 
-#define GPIO_LED1       188
-#define GPIO_LED2       189
-#define GPIO_LED3       190
-#define GPIO_LED4       191
+#define P11_LED1                    12
+#define P11_LED2                    13
+#define P11_LED3                    14
+#define P11_LED4                    15
+
+/*
+ * Support macros.
+ */
+#define PCR(port, pin)  (((port) * 16) + (pin))
 
 #if !defined(_FROM_ASM_)
 #ifdef __cplusplus

@@ -32,7 +32,7 @@
 #ifndef _HALCONF_H_
 #define _HALCONF_H_
 
-/*#include "mcuconf.h"*/
+#include "mcuconf.h"
 
 /**
  * @brief   Enables the TM subsystem.
@@ -45,7 +45,7 @@
  * @brief   Enables the PAL subsystem.
  */
 #if !defined(HAL_USE_PAL) || defined(__DOXYGEN__)
-#define HAL_USE_PAL                 FALSE
+#define HAL_USE_PAL                 TRUE
 #endif
 
 /**
@@ -205,6 +205,13 @@
 /*===========================================================================*/
 /* MAC driver related settings.                                              */
 /*===========================================================================*/
+
+/**
+ * @brief   Enables an event sources for incoming packets.
+ */
+#if !defined(MAC_USE_ZERO_COPY) || defined(__DOXYGEN__)
+#define MAC_USE_ZERO_COPY           FALSE
+#endif
 
 /**
  * @brief   Enables an event sources for incoming packets.

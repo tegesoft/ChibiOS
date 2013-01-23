@@ -177,7 +177,7 @@ typedef enum IRQn
   WWDG_IRQn                   = 0,      /*!< Window WatchDog Interrupt                                         */
   PVD_IRQn                    = 1,      /*!< PVD through EXTI Line detection Interrupt                         */
   TAMPER_STAMP_IRQn           = 2,      /*!< Tamper and TimeStamp interrupts                                   */
-  RTC_WKUP_IRQn               = 3,      /*!< RTC Wakeup interrupt through the EXTI lines 17, 19 & 20           */
+  RTC_WKUP_IRQn               = 3,      /*!< RTC Wakeup interrupt through the  lines 17, 19 & 20           */
   FLASH_IRQn                  = 4,      /*!< FLASH global Interrupt                                            */
   RCC_IRQn                    = 5,      /*!< RCC global Interrupt                                              */
   EXTI0_IRQn                  = 6,      /*!< EXTI Line0 Interrupt                                              */
@@ -1031,7 +1031,9 @@ typedef struct
 /*                                                                            */
 /******************************************************************************/
 /********************  Bit definition for ADC_ISR register  ********************/
-#define ADC_ISR_ADRD          ((uint32_t)0x00000001)   /*!< ADC Ready (ADRDY) flag  */
+/* CHIBIOS FIX */
+//#define ADC_ISR_ADRD         ((uint32_t)0x00000001) /*!< ADC Ready (ADRDY) flag  */
+#define ADC_ISR_ADRDY         ((uint32_t)0x00000001) /*!< ADC Ready (ADRDY) flag  */
 #define ADC_ISR_EOSMP         ((uint32_t)0x00000002) /*!< ADC End of Sampling flag */
 #define ADC_ISR_EOC           ((uint32_t)0x00000004) /*!< ADC End of Regular Conversion flag */
 #define ADC_ISR_EOS           ((uint32_t)0x00000008) /*!< ADC End of Regular sequence of Conversions flag */

@@ -13,8 +13,8 @@
  */
 
 /**
- * @file    SPC5xx/SIU_v1//pal_lld.h
- * @brief   SPC5xx SIU/SIUL low level driver header.
+ * @file    SPC5xx/SIUL_v1/pal_lld.h
+ * @brief   SPC5xx SIUL low level driver header.
  *
  * @addtogroup PAL
  * @{
@@ -39,7 +39,7 @@
 #undef PAL_MODE_OUTPUT_OPENDRAIN
 
 /**
- * @name    SIU/SIUL-specific PAL modes
+ * @name    SIUL-specific PAL modes
  * @{
  */
 #define PAL_SPC5_SMC                (1U << 14)
@@ -103,8 +103,7 @@
 /**
  * @brief   Alternate "n" output pad.
  */
-#define PAL_MODE_OUTPUT_ALTERNATE(n)    (PAL_SPC5_IBE | PAL_SPC5_OBE |      \
-                                         PAL_SPC5_PA(n))
+#define PAL_MODE_OUTPUT_ALTERNATE(n)    (PAL_SPC5_IBE | PAL_SPC5_PA(n))
 /** @} */
 
 /*===========================================================================*/
@@ -141,7 +140,7 @@ typedef uint16_t iomode_t;
 typedef uint32_t ioportid_t;
 
 /**
- * @brief   SIU/SIUL register initializer type.
+ * @brief   SIUL register initializer type.
  */
 typedef struct {
   uint8_t                   pcr_index;
@@ -171,42 +170,42 @@ typedef struct {
 /**
  * @brief   I/O port A identifier.
  */
-#define PA              0
+#define PORT_A          0
 
 /**
  * @brief   I/O port B identifier.
  */
-#define PB              1
+#define PORT_B          1
 
 /**
  * @brief   I/O port C identifier.
  */
-#define PC              2
+#define PORT_C          2
 
 /**
  * @brief   I/O port D identifier.
  */
-#define PD              3
+#define PORT_D          3
 
 /**
  * @brief   I/O port E identifier.
  */
-#define PE              4
+#define PORT_E          4
 
 /**
  * @brief   I/O port F identifier.
  */
-#define PF              5
+#define PORT_F          5
 
 /**
  * @brief   I/O port G identifier.
  */
-#define PG              6
+#define PORT_G          6
 
 /**
  * @brief   I/O port H identifier.
  */
-#define PH              7
+#define PORT_H          7
 
 /*===========================================================================*/
 /* Implementation, some of the following macros could be implemented as      */
@@ -232,7 +231,6 @@ typedef struct {
  */
 #define pal_lld_init(config) _pal_lld_init(config)
 
-#if SPC5_SIU_SUPPORTS_PORTS || defined(__DOXYGEN__)
 /**
  * @brief   Reads the physical I/O port states.
  *
@@ -292,8 +290,6 @@ typedef struct {
  */
 #define pal_lld_writegroup(port, mask, offset, bits)                        \
   _pal_lld_writegroup(port, mask, offset, bits)
-
-#endif /* SPC5_SIU_SUPPORTS_PORTS */
 
 /**
  * @brief   Pads group mode setup.
@@ -367,6 +363,20 @@ typedef struct {
  */
 #define pal_lld_clearpad(port, pad)                                         \
     (SIU.GPDO[((port) * 16) + (pad)].R = 0)
+
+/**
+ * @brief   Toggles a pad logical state.
+ * @note    The @ref PAL provides a default software implementation of this
+ *          functionality, implement this function if can optimize it by using
+ *          special hardware functionalities or special coding.
+ *
+ * @param[in] port      port identifier
+ * @param[in] pad       pad number within the port
+ *
+ * @notapi
+ */
+#define pal_lld_togglepad(port, pad)                                        \
+    (SIU.GPDO[((port) * 16) + (pad)].R = ~SIU.GPDO[((port) * 16) + (pad)].R)
 
 /**
  * @brief   Pad mode setup.

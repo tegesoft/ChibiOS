@@ -1,26 +1,20 @@
 /*
-    ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
-
-    This file is part of ChibiOS/RT.
-
-    ChibiOS/RT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-
-    ChibiOS/RT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Licensed under ST Liberty SW License Agreement V2, (the "License");
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *        http://www.st.com/software_license_agreement_liberty_v2
+ *
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 /**
- * @file    SPC56x/serial_lld.c
- * @brief   SPC563 low level serial driver code.
+ * @file    SPC5xx/ESCI_v1/serial_lld.c
+ * @brief   SPC5xx low level serial driver code.
  *
  * @addtogroup SERIAL
  * @{
@@ -38,14 +32,14 @@
 /**
  * @brief   eSCI-A serial driver identifier.
  */
-#if USE_SPC563_ESCIA || defined(__DOXYGEN__)
+#if SPC5_USE_ESCIA || defined(__DOXYGEN__)
 SerialDriver SD1;
 #endif
 
 /**
  * @brief   eSCI-B serial driver identifier.
  */
-#if USE_SPC563_ESCIB || defined(__DOXYGEN__)
+#if SPC5_USE_ESCIB || defined(__DOXYGEN__)
 SerialDriver SD2;
 #endif
 
@@ -79,10 +73,10 @@ static void esci_init(SerialDriver *sdp, const SerialConfig *config) {
   escip->CR2.R  = 0;                /* MDIS off.                            */
   escip->CR1.R  = 0;
   escip->LCR.R  = 0;
-  escip->CR1.B.SBR = SPC563_SYSCLK / (16 * config->sc_speed);
+  escip->CR1.B.SBR = SPC5_SYSCLK / (16 * config->sc_speed);
   if (mode & SD_MODE_LOOPBACK)
     escip->CR1.B.LOOPS = 1;
-  switch (mode & SD_MODE_PARITY) {
+  switch (mode & SD_MODE_PARITY_MASK) {
   case SD_MODE_PARITY_ODD:
     escip->CR1.B.PT = 1;
   case SD_MODE_PARITY_EVEN:
@@ -93,7 +87,7 @@ static void esci_init(SerialDriver *sdp, const SerialConfig *config) {
   }
   escip->LPR.R  = 0;
   escip->CR1.R |= 0x0000002C;       /* RIE, TE, RE to 1.                    */
-  escip->CR2.R |= 0x000F;           /* ORIE, NFIE, FEIE, PFIE to 1.         */
+  escip->CR2.R  = 0x000F;           /* ORIE, NFIE, FEIE, PFIE to 1.         */
 }
 
 /**
@@ -167,7 +161,7 @@ static void serve_interrupt(SerialDriver *sdp) {
   }
 }
 
-#if USE_SPC563_ESCIA || defined(__DOXYGEN__)
+#if SPC5_USE_ESCIA || defined(__DOXYGEN__)
 static void notify1(GenericQueue *qp) {
 
   (void)qp;
@@ -182,7 +176,7 @@ static void notify1(GenericQueue *qp) {
 }
 #endif
 
-#if USE_SPC563_ESCIB || defined(__DOXYGEN__)
+#if SPC5_USE_ESCIB || defined(__DOXYGEN__)
 static void notify2(GenericQueue *qp) {
 
   (void)qp;
@@ -201,13 +195,16 @@ static void notify2(GenericQueue *qp) {
 /* Driver interrupt handlers.                                                */
 /*===========================================================================*/
 
-#if USE_SPC563_ESCIA || defined(__DOXYGEN__)
+#if SPC5_USE_ESCIA || defined(__DOXYGEN__)
+#if !defined(SPC5_ESCIA_HANDLER)
+#error "SPC5_ESCIA_HANDLER not defined"
+#endif
 /**
  * @brief   eSCI-A interrupt handler.
  *
  * @isr
  */
-CH_IRQ_HANDLER(vector146) {
+CH_IRQ_HANDLER(SPC5_ESCIA_HANDLER) {
 
   CH_IRQ_PROLOGUE();
 
@@ -217,13 +214,16 @@ CH_IRQ_HANDLER(vector146) {
 }
 #endif
 
-#if USE_SPC563_ESCIB || defined(__DOXYGEN__)
+#if SPC5_USE_ESCIB || defined(__DOXYGEN__)
+#if !defined(SPC5_ESCIB_HANDLER)
+#error "SPC5_ESCIB_HANDLER not defined"
+#endif
 /**
  * @brief   eSCI-B interrupt handler.
  *
  * @isr
  */
-CH_IRQ_HANDLER(vector149) {
+CH_IRQ_HANDLER(SPC5_ESCIB_HANDLER) {
 
   CH_IRQ_PROLOGUE();
 
@@ -244,18 +244,18 @@ CH_IRQ_HANDLER(vector149) {
  */
 void sd_lld_init(void) {
 
-#if USE_SPC563_ESCIA
+#if SPC5_USE_ESCIA
   sdObjectInit(&SD1, NULL, notify1);
   SD1.escip       = &ESCI_A;
   ESCI_A.CR2.R    = 0x8000;                 /* MDIS ON.                     */
-  INTC.PSR[146].R = SPC563_ESCIA_PRIORITY;
+  INTC.PSR[SPC5_ESCIA_NUMBER].R = SPC5_ESCIA_PRIORITY;
 #endif
 
-#if USE_SPC563_ESCIB
+#if SPC5_USE_ESCIB
   sdObjectInit(&SD2, NULL, notify2);
   SD2.escip       = &ESCI_B;
   ESCI_B.CR2.R    = 0x8000;                 /* MDIS ON.                     */
-  INTC.PSR[149].R = SPC563_ESCIB_PRIORITY;
+  INTC.PSR[SPC5_ESCIB_NUMBER].R = SPC5_ESCIB_PRIORITY;
 #endif
 }
 

@@ -116,7 +116,7 @@ void spc_clock_init(void) {
   /* If the board is equipped with an oscillator instead of a xtal then the
      bypass must be activated.*/
   CGM.OSC_CTL.B.OSCBYP = TRUE;
-#endif /* SPC5_ENABLE_XOSC */
+#endif /* SPC5_OSC_BYPASS */
 
   /* Initialization of the FMPLLs settings.*/
   CGM.FMPLL[0].CR.R = SPC5_FMPLL0_ODF |
@@ -181,7 +181,7 @@ void spc_clock_init(void) {
  * @retval CH_SUCCESS   if the switch operation has been completed.
  * @retval CH_FAILED    if the switch operation failed.
  */
-bool_t halSPCSetRunMode(spc560prunmode_t mode) {
+bool_t halSPCSetRunMode(spc5_runmode_t mode) {
 
   /* Starts a transition process.*/
   ME.MCTL.R = SPC5_ME_MCTL_MODE(mode) | SPC5_ME_MCTL_KEY;

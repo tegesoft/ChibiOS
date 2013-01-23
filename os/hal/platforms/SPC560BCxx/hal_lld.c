@@ -97,7 +97,7 @@ void hal_lld_init(void) {
 }
 
 /**
- * @brief   SPC560Pxx clocks and PLL initialization.
+ * @brief   SPC560B/Cxx clocks and PLL initialization.
  * @note    All the involved constants come from the file @p board.h and
  *          @p hal_lld.h
  * @note    This function must be invoked only after the system reset.
@@ -110,17 +110,17 @@ void spc_clock_init(void) {
   while (!ME.GS.B.S_FIRC)
     ;
 
+#if !SPC5_NO_INIT
+
   /* Oscillators dividers setup.*/
   CGM.FIRC_CTL.B.RCDIV   = SPC5_IRCDIV_VALUE - 1;
   CGM.FXOSC_CTL.B.OSCDIV = SPC5_XOSCDIV_VALUE - 1;
-
-#if !SPC5_NO_INIT
 
 #if defined(SPC5_OSC_BYPASS)
   /* If the board is equipped with an oscillator instead of a xtal then the
      bypass must be activated.*/
   CGM.OSC_CTL.B.OSCBYP = TRUE;
-#endif /* SPC5_ENABLE_XOSC */
+#endif /* SPC5_OSC_BYPASS */
 
   /* Initialization of the FMPLLs settings.*/
   CGM.FMPLL_CR.R = SPC5_FMPLL0_ODF |
@@ -185,7 +185,7 @@ void spc_clock_init(void) {
  * @retval CH_SUCCESS   if the switch operation has been completed.
  * @retval CH_FAILED    if the switch operation failed.
  */
-bool_t halSPCSetRunMode(spc560prunmode_t mode) {
+bool_t halSPCSetRunMode(spc5_runmode_t mode) {
 
   /* Starts a transition process.*/
   ME.MCTL.R = SPC5_ME_MCTL_MODE(mode) | SPC5_ME_MCTL_KEY;
