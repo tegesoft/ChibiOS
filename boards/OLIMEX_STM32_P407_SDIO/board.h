@@ -272,7 +272,7 @@
  * PB10 - GPIOB_USB_FS_FAULT    (input floating).
  * PB11 - GPIOB_ETH_RMII_TX_EN  (alternate 11).
  * PB12 - GPIOB_OTG_HS_ID       (alternate 12).
- * PB13 - GPIOB_OTG_HS_VBUS     (input pull-up).
+ * PB13 - GPIOB_OTG_HS_VBUS     (input pull-down).
  * PB14 - GPIOB_OTG_HS_DM       (alternate 12).
  * PB15 - GPIOB_OTG_HS_DP       (alternate 12).
  */
