@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+                 2011,2012,2013 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -59,6 +59,19 @@
  * @notapi
  */
 void hal_lld_init(void) {
+
+}
+
+/**
+ * @brief   Platform early initialization.
+ * @note    All the involved constants come from the file @p board.h.
+ * @note    This function is meant to be invoked early during the system
+ *          initialization, it is usually invoked from the file
+ *          @p board.c.
+ *
+ * @special
+ */
+void platform_early_init(void) {
 
 }
 

@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+                 2011,2012,2013 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -245,7 +245,7 @@ static void cmd_tree(BaseSequentialStream *chp, int argc, char *argv[]) {
   chprintf(chp,
            "FS: %lu free clusters, %lu sectors per cluster, %lu bytes free\r\n",
            clusters, (uint32_t)MMC_FS.csize,
-           clusters * (uint32_t)MMC_FS.csize * (uint32_t)MMC_SECTOR_SIZE);
+           clusters * (uint32_t)MMC_FS.csize * (uint32_t)MMCSD_BLOCK_SIZE);
   fbuff[0] = 0;
   scan_files(chp, (char *)fbuff);
 }

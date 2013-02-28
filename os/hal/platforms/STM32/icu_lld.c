@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+                 2011,2012,2013 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -538,7 +538,6 @@ void icu_lld_stop(ICUDriver *icup) {
       rccDisableTIM5(FALSE);
     }
 #endif
-  }
 #if STM32_ICU_USE_TIM8
     if (&ICUD8 == icup) {
       nvicDisableVector(STM32_TIM8_UP_NUMBER);
@@ -546,6 +545,7 @@ void icu_lld_stop(ICUDriver *icup) {
       rccDisableTIM8(FALSE);
     }
 #endif
+  }
 }
 
 /**

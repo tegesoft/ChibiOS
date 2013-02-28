@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+                 2011,2012,2013 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -221,6 +221,7 @@ typedef struct {
    * @brief Bit rate.
    */
   uint32_t                  sc_speed;
+  /* End of the mandatory fields.*/
   /**
    * @brief Initialization value for the CR1 register.
    */

@@ -20,7 +20,7 @@ endif
 
 # Enable this if you want the linker to remove unused code and data.
 ifeq ($(USE_LINK_GC),)
-  USE_LINK_GC = no
+  USE_LINK_GC = yes
 endif
 
 # If enabled, this option allows to compile the application in VLE mode.
@@ -54,7 +54,7 @@ include $(CHIBIOS)/os/kernel/kernel.mk
 include $(CHIBIOS)/test/test.mk
 
 # Define linker script file here
-LDSCRIPT= $(PORTLD)/SPC560P44.ld
+LDSCRIPT= $(PORTLD)/SPC560P50.ld
 
 # C sources here.
 CSRC = $(PORTSRC) \

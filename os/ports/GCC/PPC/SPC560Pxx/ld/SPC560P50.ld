@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+                 2011,2012,2013 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -48,6 +48,8 @@ SECTIONS
     .boot : ALIGN(16) SUBALIGN(16)
     {
         KEEP(*(.bam))
+        KEEP(*(.coreinit))
+        KEEP(*(.handlers))
         KEEP(*(.crt0))
         . = ALIGN(0x00000800);
         KEEP(*(.vectors))
@@ -57,7 +59,7 @@ SECTIONS
            allocate code or data in the first 64KB by using special sections.*/
         . = ALIGN(0x00010000);
         __ivpr_base__ = .;
-        KEEP(*(.handlers))
+        KEEP(*(.ivors))
     } > flash
 
     constructors : ALIGN(4) SUBALIGN(4)

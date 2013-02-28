@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+                 2011,2012,2013 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -38,6 +38,19 @@
 /*===========================================================================*/
 /* Driver pre-compile time settings.                                         */
 /*===========================================================================*/
+
+/**
+ * @name    Configuration options
+ * @{
+ */
+/**
+ * @brief   SPI driver enable switch.
+ * @details If set to @p TRUE the support for SPI1 is included.
+ */
+#if !defined(PLATFORM_SPI_USE_SPI1) || defined(__DOXYGEN__)
+#define PLATFORM_SPI_USE_SPI1               FALSE
+#endif
+/** @} */
 
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
@@ -116,6 +129,10 @@ struct SPIDriver {
 /*===========================================================================*/
 /* External declarations.                                                    */
 /*===========================================================================*/
+
+#if PLATFORM_SPI_USE_SPI1 && !defined(__DOXYGEN__)
+extern SPIDriver SPID1;
+#endif
 
 #ifdef __cplusplus
 extern "C" {

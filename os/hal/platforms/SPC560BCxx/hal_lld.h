@@ -237,19 +237,10 @@
 #endif
 
 /**
- * @brief   XOSC divider value.
- * @note    The allowed range is 1...32.
+ * @brief   Disables the watchdog on start.
  */
-#if !defined(SPC5_XOSCDIV_VALUE) || defined(__DOXYGEN__)
-#define SPC5_XOSCDIV_VALUE                  1
-#endif
-
-/**
- * @brief   Fast IRC divider value.
- * @note    The allowed range is 1...32.
- */
-#if !defined(SPC5_IRCDIV_VALUE) || defined(__DOXYGEN__)
-#define SPC5_IRCDIV_VALUE                   1
+#if !defined(SPC5_DISABLE_WATCHDOG) || defined(__DOXYGEN__)
+#define SPC5_DISABLE_WATCHDOG               TRUE
 #endif
 
 /**
@@ -274,6 +265,46 @@
  */
 #if !defined(SPC5_FMPLL0_ODF) || defined(__DOXYGEN__)
 #define SPC5_FMPLL0_ODF                     SPC5_FMPLL_ODF_DIV4
+#endif
+
+/**
+ * @brief   XOSC divider value.
+ * @note    The allowed range is 1...32.
+ */
+#if !defined(SPC5_XOSCDIV_VALUE) || defined(__DOXYGEN__)
+#define SPC5_XOSCDIV_VALUE                  1
+#endif
+
+/**
+ * @brief   Fast IRC divider value.
+ * @note    The allowed range is 1...32.
+ */
+#if !defined(SPC5_IRCDIV_VALUE) || defined(__DOXYGEN__)
+#define SPC5_IRCDIV_VALUE                   1
+#endif
+
+/**
+ * @brief   Peripherals Set 1 clock divider value.
+ * @note    Zero means disabled clock.
+ */
+#if !defined(SPC5_PERIPHERAL1_CLK_DIV_VALUE) || defined(__DOXYGEN__)
+#define SPC5_PERIPHERAL1_CLK_DIV_VALUE      2
+#endif
+
+/**
+ * @brief   Peripherals Set 2 clock divider value.
+ * @note    Zero means disabled clock.
+ */
+#if !defined(SPC5_PERIPHERAL2_CLK_DIV_VALUE) || defined(__DOXYGEN__)
+#define SPC5_PERIPHERAL2_CLK_DIV_VALUE      2
+#endif
+
+/**
+ * @brief   Peripherals Set 3 clock divider value.
+ * @note    Zero means disabled clock.
+ */
+#if !defined(SPC5_PERIPHERAL3_CLK_DIV_VALUE) || defined(__DOXYGEN__)
+#define SPC5_PERIPHERAL3_CLK_DIV_VALUE      2
 #endif
 
 /**
@@ -589,6 +620,15 @@
 #define SPC5_PIT0_IRQ_PRIORITY              4
 #endif
 
+/**
+ * @brief   Clock initialization failure hook.
+ * @note    The default is to stop the system and let the RTC restart it.
+ * @note    The hook code must not return.
+ */
+#if !defined(SPC5_CLOCK_FAILURE_HOOK) || defined(__DOXYGEN__)
+#define SPC5_CLOCK_FAILURE_HOOK()           chSysHalt()
+#endif
+
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
@@ -660,6 +700,36 @@
 /* Check on SPC5_FMPLL0_CLK.*/
 #if (SPC5_FMPLL0_CLK > SPC5_FMPLL0_CLK_MAX) && !SPC5_ALLOW_OVERCLOCK
 #error "SPC5_FMPLL0_CLK outside acceptable range (0...SPC5_FMPLL0_CLK_MAX)"
+#endif
+
+/* Check on the peripherals set 1 clock divider settings.*/
+#if SPC5_PERIPHERAL1_CLK_DIV_VALUE == 0
+#define SPC5_CGM_SC_DC0         0
+#elif (SPC5_PERIPHERAL1_CLK_DIV_VALUE >= 1) &&                              \
+      (SPC5_PERIPHERAL1_CLK_DIV_VALUE <= 16)
+#define SPC5_CGM_SC_DC0         (0x80 | (SPC5_PERIPHERAL1_CLK_DIV_VALUE - 1))
+#else
+#error "invalid SPC5_PERIPHERAL1_CLK_DIV_VALUE value specified"
+#endif
+
+/* Check on the peripherals set 2 clock divider settings.*/
+#if SPC5_PERIPHERAL2_CLK_DIV_VALUE == 0
+#define SPC5_CGM_SC_DC1         0
+#elif (SPC5_PERIPHERAL2_CLK_DIV_VALUE >= 1) &&                              \
+      (SPC5_PERIPHERAL2_CLK_DIV_VALUE <= 16)
+#define SPC5_CGM_SC_DC1         (0x80 | (SPC5_PERIPHERAL2_CLK_DIV_VALUE - 1))
+#else
+#error "invalid SPC5_PERIPHERAL2_CLK_DIV_VALUE value specified"
+#endif
+
+/* Check on the peripherals set 3 clock divider settings.*/
+#if SPC5_PERIPHERAL3_CLK_DIV_VALUE == 0
+#define SPC5_CGM_SC_DC2         0
+#elif (SPC5_PERIPHERAL3_CLK_DIV_VALUE >= 1) &&                              \
+      (SPC5_PERIPHERAL3_CLK_DIV_VALUE <= 16)
+#define SPC5_CGM_SC_DC2         (0x80 | (SPC5_PERIPHERAL3_CLK_DIV_VALUE - 1))
+#else
+#error "invalid SPC5_PERIPHERAL3_CLK_DIV_VALUE value specified"
 #endif
 
 /*===========================================================================*/

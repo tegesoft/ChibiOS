@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+                 2011,2012,2013 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -355,7 +355,7 @@ typedef struct I2CDriver I2CDriver;
 /**
  * @brief Structure representing an I2C driver.
  */
-struct I2CDriver{
+struct I2CDriver {
   /**
    * @brief   Driver state.
    */

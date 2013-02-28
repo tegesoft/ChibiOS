@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+                 2011,2012,2013 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -43,6 +43,19 @@
 /*===========================================================================*/
 /* Driver pre-compile time settings.                                         */
 /*===========================================================================*/
+
+/**
+ * @name    Configuration options
+ * @{
+ */
+/**
+ * @brief   EXT driver enable switch.
+ * @details If set to @p TRUE the support for EXT1 is included.
+ */
+#if !defined(PLATFORM_EXT_USE_EXT1) || defined(__DOXYGEN__)
+#define PLATFORM_EXT_USE_EXT1               FALSE
+#endif
+/** @} */
 
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
@@ -117,7 +130,7 @@ struct EXTDriver {
 /* External declarations.                                                    */
 /*===========================================================================*/
 
-#if !defined(__DOXYGEN__)
+#if PLATFORM_EXT_USE_EXT1 && !defined(__DOXYGEN__)
 extern EXTDriver EXTD1;
 #endif
 

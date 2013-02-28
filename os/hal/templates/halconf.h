@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+                 2011,2012,2013 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -37,6 +37,9 @@
 /**
  * @name    Drivers enable switches
  */
+/**
+ * @brief   Enables the TM subsystem.
+ */
 #if !defined(HAL_USE_TM) || defined(__DOXYGEN__)
 #define HAL_USE_TM                  TRUE
 #endif
@@ -66,28 +69,28 @@
  * @brief   Enables the EXT subsystem.
  */
 #if !defined(HAL_USE_EXT) || defined(__DOXYGEN__)
-#define HAL_USE_EXT                 FALSE
+#define HAL_USE_EXT                 TRUE
 #endif
 
 /**
  * @brief   Enables the GPT subsystem.
  */
 #if !defined(HAL_USE_GPT) || defined(__DOXYGEN__)
-#define HAL_USE_GPT                 FALSE
+#define HAL_USE_GPT                 TRUE
 #endif
 
 /**
  * @brief   Enables the I2C subsystem.
  */
 #if !defined(HAL_USE_I2C) || defined(__DOXYGEN__)
-#define HAL_USE_I2C                 FALSE
+#define HAL_USE_I2C                 TRUE
 #endif
 
 /**
  * @brief   Enables the ICU subsystem.
  */
 #if !defined(HAL_USE_ICU) || defined(__DOXYGEN__)
-#define HAL_USE_ICU                 FALSE
+#define HAL_USE_ICU                 TRUE
 #endif
 
 /**
@@ -122,7 +125,7 @@
  * @brief   Enables the SDC subsystem.
  */
 #if !defined(HAL_USE_SDC) || defined(__DOXYGEN__)
-#define HAL_USE_SDC                 FALSE
+#define HAL_USE_SDC                 TRUE
 #endif
 
 /**
@@ -226,7 +229,7 @@
  * @brief   Enables an event sources for incoming packets.
  */
 #if !defined(MAC_USE_ZERO_COPY) || defined(__DOXYGEN__)
-#define MAC_USE_ZERO_COPY           FALSE
+#define MAC_USE_ZERO_COPY           TRUE
 #endif
 
 /**
@@ -245,13 +248,6 @@
 /*===========================================================================*/
 
 /**
- * @brief   Block size for MMC transfers.
- */
-#if !defined(MMC_SECTOR_SIZE) || defined(__DOXYGEN__)
-#define MMC_SECTOR_SIZE             512
-#endif
-
-/**
  * @brief   Delays insertions.
  * @details If enabled this options inserts delays into the MMC waiting
  *          routines releasing some extra CPU time for the threads with
@@ -261,32 +257,6 @@
  */
 #if !defined(MMC_NICE_WAITING) || defined(__DOXYGEN__)
 #define MMC_NICE_WAITING            TRUE
-#endif
-
-/**
- * @brief   Number of positive insertion queries before generating the
- *          insertion event.
- */
-#if !defined(MMC_POLLING_INTERVAL) || defined(__DOXYGEN__)
-#define MMC_POLLING_INTERVAL        10
-#endif
-
-/**
- * @brief   Interval, in milliseconds, between insertion queries.
- */
-#if !defined(MMC_POLLING_DELAY) || defined(__DOXYGEN__)
-#define MMC_POLLING_DELAY           10
-#endif
-
-/**
- * @brief   Uses the SPI polled API for small data transfers.
- * @details Polled transfers usually improve performance because it
- *          saves two context switches and interrupt servicing. Note
- *          that this option has no effect on large transfers which
- *          are always performed using DMAs/IRQs.
- */
-#if !defined(MMC_USE_SPI_POLLING) || defined(__DOXYGEN__)
-#define MMC_USE_SPI_POLLING         TRUE
 #endif
 /** @} */
 
@@ -311,7 +281,7 @@
  *          at @p FALSE.
  */
 #if !defined(SDC_MMC_SUPPORT) || defined(__DOXYGEN__)
-#define SDC_MMC_SUPPORT             FALSE
+#define SDC_MMC_SUPPORT             TRUE
 #endif
 
 /**

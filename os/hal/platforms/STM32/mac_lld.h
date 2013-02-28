@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+                 2011,2012,2013 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -291,6 +291,7 @@ typedef struct {
    * @brief Available space size.
    */
   size_t                    size;
+  /* End of the mandatory fields.*/
   /**
    * @brief Pointer to the physical descriptor.
    */
@@ -309,6 +310,7 @@ typedef struct {
    * @brief Available data size.
    */
   size_t                size;
+  /* End of the mandatory fields.*/
   /**
    * @brief Pointer to the physical descriptor.
    */

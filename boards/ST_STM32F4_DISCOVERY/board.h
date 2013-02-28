@@ -599,7 +599,7 @@
  * PD8  - PIN8                      (input pullup).
  * PD9  - PIN9                      (input pullup).
  * PD10 - PIN10                     (input pullup).
- * PD11 - PIN11                     (input floating).
+ * PD11 - PIN11                     (input pullup).
  * PD12 - LED4                      (output pushpull maximum).
  * PD13 - LED3                      (output pushpull maximum).
  * PD14 - LED5                      (output pushpull maximum).
@@ -664,7 +664,7 @@
                                      PIN_PUPDR_PULLUP(GPIOD_PIN8) |         \
                                      PIN_PUPDR_PULLUP(GPIOD_PIN9) |         \
                                      PIN_PUPDR_PULLUP(GPIOD_PIN10) |        \
-                                     PIN_PUPDR_FLOATING(GPIOD_PIN11) |      \
+                                     PIN_PUPDR_PULLUP(GPIOD_PIN11) |        \
                                      PIN_PUPDR_FLOATING(GPIOD_LED4) |       \
                                      PIN_PUPDR_FLOATING(GPIOD_LED3) |       \
                                      PIN_PUPDR_FLOATING(GPIOD_LED5) |       \

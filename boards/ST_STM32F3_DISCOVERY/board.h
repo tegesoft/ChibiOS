@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+                 2011,2012,2013 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -48,7 +48,7 @@
 #define STM32_HSE_BYPASS
 
 /*
- * MCU type as defined in the ST header file stm32f30x.h.
+ * MCU type as defined in the ST header.
  */
 #define STM32F30X
 

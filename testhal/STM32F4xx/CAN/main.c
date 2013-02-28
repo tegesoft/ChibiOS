@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+                 2011,2012,2013 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -27,7 +27,7 @@ struct can_instance {
 };
 
 static const struct can_instance can1 = {&CAND1, GPIOD_LED5};
-//static const struct can_instance can2 = {&CAND2, GPIOD_LED3};
+static const struct can_instance can2 = {&CAND2, GPIOD_LED3};
 
 /*
  * Internal loopback mode, 500KBaud, automatic wakeup, automatic recover
@@ -37,16 +37,14 @@ static const struct can_instance can1 = {&CAND1, GPIOD_LED5};
 static const CANConfig cancfg = {
   CAN_MCR_ABOM | CAN_MCR_AWUM | CAN_MCR_TXFP,
   CAN_BTR_LBKM | CAN_BTR_SJW(0) | CAN_BTR_TS2(1) |
-  CAN_BTR_TS1(8) | CAN_BTR_BRP(6),
-  0,
-  NULL
+  CAN_BTR_TS1(8) | CAN_BTR_BRP(6)
 };
 
 /*
  * Receiver thread.
  */
 static WORKING_AREA(can_rx1_wa, 256);
-//static WORKING_AREA(can_rx2_wa, 256);
+static WORKING_AREA(can_rx2_wa, 256);
 static msg_t can_rx(void *p) {
   struct can_instance *cip = p;
   EventListener el;
@@ -58,7 +56,8 @@ static msg_t can_rx(void *p) {
   while(!chThdShouldTerminate()) {
     if (chEvtWaitAnyTimeout(ALL_EVENTS, MS2ST(100)) == 0)
       continue;
-    while (canReceive(cip->canp, &rxmsg, TIME_IMMEDIATE) == RDY_OK) {
+    while (canReceive(cip->canp, CAN_ANY_MAILBOX,
+                      &rxmsg, TIME_IMMEDIATE) == RDY_OK) {
       /* Process message.*/
       palTogglePad(GPIOD, cip->led);
     }
@@ -84,7 +83,8 @@ static msg_t can_tx(void * p) {
   txmsg.data32[1] = 0x00FF00FF;
 
   while (!chThdShouldTerminate()) {
-    canTransmit(&CAND1, &txmsg, MS2ST(100));
+    canTransmit(&CAND1, CAN_ANY_MAILBOX, &txmsg, MS2ST(100));
+    canTransmit(&CAND2, CAN_ANY_MAILBOX, &txmsg, MS2ST(100));
     chThdSleepMilliseconds(500);
   }
   return 0;
@@ -106,17 +106,18 @@ int main(void) {
   chSysInit();
 
   /*
-   * Activates the CAN driver 1.
+   * Activates the CAN drivers 1 and 2.
    */
   canStart(&CAND1, &cancfg);
+  canStart(&CAND2, &cancfg);
 
   /*
    * Starting the transmitter and receiver threads.
    */
   chThdCreateStatic(can_rx1_wa, sizeof(can_rx1_wa), NORMALPRIO + 7,
                     can_rx, (void *)&can1);
-//  chThdCreateStatic(can_rx2_wa, sizeof(can_rx2_wa), NORMALPRIO + 7,
-//                    can_rx, (void *)&can2);
+  chThdCreateStatic(can_rx2_wa, sizeof(can_rx2_wa), NORMALPRIO + 7,
+                    can_rx, (void *)&can2);
   chThdCreateStatic(can_tx_wa, sizeof(can_tx_wa), NORMALPRIO + 7,
                     can_tx, NULL);
 

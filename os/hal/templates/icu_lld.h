@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+                 2011,2012,2013 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -42,6 +42,19 @@
 /*===========================================================================*/
 /* Driver pre-compile time settings.                                         */
 /*===========================================================================*/
+
+/**
+ * @name    Configuration options
+ * @{
+ */
+/**
+ * @brief   ICU driver enable switch.
+ * @details If set to @p TRUE the support for ICU1 is included.
+ */
+#if !defined(PLATFORM_ICU_USE_ICU1) || defined(__DOXYGEN__)
+#define PLATFORM_ICU_USE_ICU1               FALSE
+#endif
+/** @} */
 
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
@@ -124,6 +137,10 @@ struct ICUDriver {
 /*===========================================================================*/
 /* External declarations.                                                    */
 /*===========================================================================*/
+
+#if PLATFORM_ICU_USE_ICU1 && !defined(__DOXYGEN__)
+extern ICUDriver ICUD1;
+#endif
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+                 2011,2012,2013 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -35,16 +35,27 @@
 /* Driver constants.                                                         */
 /*===========================================================================*/
 
+/**
+ * @brief   Number of PWM channels per PWM driver.
+ */
+#define PWM_CHANNELS                            4
+
 /*===========================================================================*/
 /* Driver pre-compile time settings.                                         */
 /*===========================================================================*/
 
 /**
- * @brief   Number of PWM channels per PWM driver.
+ * @name    Configuration options
+ * @{
  */
-#if !defined(PWM_CHANNELS) || defined(__DOXYGEN__)
-#define PWM_CHANNELS        1
+/**
+ * @brief   XXX driver enable switch.
+ * @details If set to @p TRUE the support for XXX1 is included.
+ */
+#if !defined(PLATFORM_XXX_USE_XXX1) || defined(__DOXYGEN__)
+#define PLATFORM_XXX_USE_XXX1             FALSE
 #endif
+/** @} */
 
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
@@ -150,6 +161,10 @@ struct PWMDriver {
 /*===========================================================================*/
 /* External declarations.                                                    */
 /*===========================================================================*/
+
+#if PLATFORM_XXX_USE_XXX1 && !defined(__DOXYGEN__)
+extern XXXDriver XXXD1;
+#endif
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+                 2011,2012,2013 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -222,7 +222,7 @@ typedef enum {
 typedef uint32_t icufreq_t;
 
 /**
- * @brief   ICU channel.
+ * @brief   ICU channel type.
  */
 typedef enum {
   ICU_CHANNEL_1 = 0,              /**< Use TIMxCH1.      */

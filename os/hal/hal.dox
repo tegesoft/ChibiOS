@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+                 2011,2012,2013 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -79,22 +79,5 @@
  * settings are contained in the @p mcuconf.h file instead and are describe
  * in the various platforms reference manuals.
  *
- * @ingroup IO
- */
-
-/**
- * @defgroup IO_CHANNEL Abstract I/O Channels
- * @ingroup IO
- */
-
-/**
- * @defgroup IO_BLOCK Abstract I/O Block Device
- * @ingroup IO
- */
-
-/**
- * @defgroup MMCSD MMC/SD Block Devices common ancestor
- * @details This module implements a common ancestor for all device drivers
- *          accessing MMC or SD cards.
  * @ingroup IO
  */
