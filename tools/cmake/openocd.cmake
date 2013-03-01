@@ -5,7 +5,7 @@ set(OPENOCD_TARGET_CFG "" CACHE FILEPATH "OpenOCD target/board configuration fil
 # try to locate OpenOCD
 find_program(
     OPENOCD_EXE
-    NAMES openocd openocd-0.6.0 openocd.exe openocd-0.6.0.exe
+    NAMES openocd openocd-0.6.0 openocd-0.6.1 openocd.exe openocd-0.6.0.exe openocd-0.6.1.exe
     PATHS ${OPENOCD_ROOT}
     DOC "OpenOCD program"
 )
