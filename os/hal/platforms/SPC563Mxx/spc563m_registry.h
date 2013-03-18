@@ -31,10 +31,13 @@
  * @name    SPC563Mxx capabilities
  * @{
  */
+/* eDMA attributes.*/
+#define SPC5_HAS_EDMAA                      TRUE
+#define SPC5_EDMA_NCHANNELS                 32
+#define SPC5_EDMA_HAS_MUX                   FALSE
+
 /* eQADC attributes.*/
 #define SPC5_HAS_EQADC                      TRUE
-#define SPC5_EQADC1_HANDLER                 vector146
-#define SPC5_EQADC1_NUMBER                  146
 
 /* eSCI attributes.*/
 #define SPC5_HAS_ESCIA                      TRUE
@@ -44,6 +47,8 @@
 #define SPC5_HAS_ESCIB                      TRUE
 #define SPC5_ESCIB_HANDLER                  vector149
 #define SPC5_ESCIB_NUMBER                   149
+
+#define SPC5_HAS_ESCIC                      FALSE
 
 /* SIU attributes.*/
 #define SPC5_HAS_SIU                        TRUE

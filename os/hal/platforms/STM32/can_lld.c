@@ -50,7 +50,7 @@ CANDriver CAND2;
 #endif
 
 /*===========================================================================*/
-/* Driver local variables.                                                   */
+/* Driver local variables and types.                                         */
 /*===========================================================================*/
 
 /*===========================================================================*/
@@ -187,7 +187,7 @@ static void can_lld_rx1_handler(CANDriver *canp) {
     chSysLockFromIsr();
     while (chSemGetCounterI(&canp->rxsem) < 0)
       chSemSignalI(&canp->rxsem);
-    chEvtBroadcastFlagsI(&canp->rxfull_event, CAN_MAILBOX_TO_MASK(1));
+    chEvtBroadcastFlagsI(&canp->rxfull_event, CAN_MAILBOX_TO_MASK(2));
     chSysUnlockFromIsr();
   }
   if ((rf1r & CAN_RF1R_FOVR1) > 0) {
@@ -212,6 +212,7 @@ static void can_lld_sce_handler(CANDriver *canp) {
   msr = canp->can->MSR;
   canp->can->MSR = CAN_MSR_ERRI | CAN_MSR_WKUI | CAN_MSR_SLAKI;
   /* Wakeup event.*/
+#if CAN_USE_SLEEP_MODE
   if (msr & CAN_MSR_WKUI) {
     canp->state = CAN_READY;
     canp->can->MCR &= ~CAN_MCR_SLEEP;
@@ -219,6 +220,7 @@ static void can_lld_sce_handler(CANDriver *canp) {
     chEvtBroadcastI(&canp->wakeup_event);
     chSysUnlockFromIsr();
   }
+#endif /* CAN_USE_SLEEP_MODE */
   /* Error event.*/
   if (msr & CAN_MSR_ERRI) {
     flagsmask_t flags;
@@ -567,7 +569,8 @@ bool_t can_lld_is_rx_nonempty(CANDriver *canp, canmbx_t mailbox) {
 
   switch (mailbox) {
   case CAN_ANY_MAILBOX:
-    return (canp->can->RF0R & (CAN_RF0R_FMP0 | CAN_RF1R_FMP1)) != 0;
+    return ((canp->can->RF0R & CAN_RF0R_FMP0) != 0 ||
+            (canp->can->RF1R & CAN_RF1R_FMP1) != 0);
   case 1:
     return (canp->can->RF0R & CAN_RF0R_FMP0) != 0;
   case 2:
