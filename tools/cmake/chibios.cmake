@@ -152,6 +152,19 @@ chibios_debug_option(CHIBIOS_DBG_SYSTEM_STATE_CHECK     "Enable checks on calls 
 chibios_debug_option(CHIBIOS_DBG_FILL_THREAD            "Enable threads workspace filling"          CH_DBG_FILL_THREADS)
 chibios_debug_option(CHIBIOS_DBG_THREADS_PROFILING      "Enable thread profiling"                   CH_DBG_THREADS_PROFILING)
 
+option(CHIBIOS_GENERATE_HEX_FILE "Generate an Intel HEX file out of the ELF target"  TRUE)
+option(CHIBIOS_GENERATE_BIN_FILE "Generate a binary file out of the ELF target"      TRUE)
+
+macro(get_output_type_info type ext full_name)
+    if(${type} STREQUAL "ihex")
+        set(${ext} "hex")
+        set(${full_name} "Intel HEX")
+    elseif(${type} STREQUAL "binary")
+        set(${ext} "bin")
+        set(${full_name} "binary")
+    endif()
+endmacro()
+
 # main macro - creates a ChibiOs executable target and the corresponding flash target
 macro(add_chibios_executable name)
 
@@ -170,16 +183,29 @@ macro(add_chibios_executable name)
     endif()
     set_target_properties(${name} PROPERTIES LINK_FLAGS ${L_LINK_FLAGS})
 
-    # generate an Intel HEX file out of the ELF target
+    set(OUTPUT_TYPES)
+    if(CHIBIOS_GENERATE_HEX_FILE)
+        set(OUTPUT_TYPES ${OUTPUT_TYPES} "ihex")
+    endif()
+    if(CHIBIOS_GENERATE_BIN_FILE)
+        set(OUTPUT_TYPES ${OUTPUT_TYPES} "binary")
+    endif()
+
     get_property(L_TARGET_LOCATION TARGET ${name} PROPERTY LOCATION)
     get_filename_component(L_TARGET_PATH "${L_TARGET_LOCATION}" PATH)
     get_filename_component(L_TARGET_NAME_WE "${L_TARGET_LOCATION}" NAME_WE)
     get_filename_component(L_TARGET_NAME "${L_TARGET_LOCATION}" NAME)
-    add_custom_command(TARGET ${name} POST_BUILD
-        COMMAND ${CMAKE_OBJCOPY} --strip-all --output-target ihex "${L_TARGET_PATH}/${L_TARGET_NAME}" "${L_TARGET_PATH}/${L_TARGET_NAME_WE}.hex"
-        COMMENT "Generate Intel HEX file: ${L_TARGET_PATH}/${L_TARGET_NAME_WE}.hex"
-    )
-    set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${L_TARGET_PATH}/${L_TARGET_NAME_WE}.hex")
+
+    foreach(type ${OUTPUT_TYPES})
+        # generate an output file out of the ELF target
+        get_output_type_info(${type} OUTPUT_EXT OUTPUT_NAME)
+        set(OUTPUT_FILE "${L_TARGET_PATH}/${L_TARGET_NAME_WE}.${OUTPUT_EXT}")
+        add_custom_command(TARGET ${name} POST_BUILD
+            COMMAND ${CMAKE_OBJCOPY} --strip-all --output-target ${type} "${L_TARGET_PATH}/${L_TARGET_NAME}" ${OUTPUT_FILE}
+            COMMENT "Generate ${OUTPUT_NAME} file: ${OUTPUT_FILE}"
+        )
+        set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${OUTPUT_FILE})
+    endforeach()
 
 endmacro()
 
