@@ -152,6 +152,27 @@ chibios_debug_option(CHIBIOS_DBG_SYSTEM_STATE_CHECK     "Enable checks on calls 
 chibios_debug_option(CHIBIOS_DBG_FILL_THREAD            "Enable threads workspace filling"          CH_DBG_FILL_THREADS)
 chibios_debug_option(CHIBIOS_DBG_THREADS_PROFILING      "Enable thread profiling"                   CH_DBG_THREADS_PROFILING)
 
+# output file options
+option(CHIBIOS_GENERATE_HEX_FILE "Generate an Intel HEX file out of the ELF target"  TRUE)
+option(CHIBIOS_GENERATE_BIN_FILE "Generate a binary file out of the ELF target"      TRUE)
+
+# generates an output file based on the given options
+macro(chibios_generate_output target type output)
+
+    # get the full path of the file to convert
+    get_property(L_TARGET_LOCATION TARGET ${target} PROPERTY LOCATION)
+
+    # create a custom command that converts the input file to the desired output
+    add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} --strip-all --output-target ${type} ${L_TARGET_LOCATION} ${output}
+        COMMENT "Generating ${type} file ${output}"
+    )
+
+    # don't forget to add it to the list of additional files to clean
+    set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${output})
+
+endmacro()
+
 # main macro - creates a ChibiOs executable target and the corresponding flash target
 macro(add_chibios_executable name)
 
@@ -169,17 +190,20 @@ macro(add_chibios_executable name)
         set(L_LINK_FLAGS "${L_LINK_FLAGS} -T${DEFAULT_LINKER_SCRIPT}")
     endif()
     set_target_properties(${name} PROPERTIES LINK_FLAGS ${L_LINK_FLAGS})
-
-    # generate an Intel HEX file out of the ELF target
+   
+    # reuse the ELF file path and name to generate the other output files
     get_property(L_TARGET_LOCATION TARGET ${name} PROPERTY LOCATION)
     get_filename_component(L_TARGET_PATH "${L_TARGET_LOCATION}" PATH)
     get_filename_component(L_TARGET_NAME_WE "${L_TARGET_LOCATION}" NAME_WE)
-    get_filename_component(L_TARGET_NAME "${L_TARGET_LOCATION}" NAME)
-    add_custom_command(TARGET ${name} POST_BUILD
-        COMMAND ${CMAKE_OBJCOPY} --strip-all --output-target ihex "${L_TARGET_PATH}/${L_TARGET_NAME}" "${L_TARGET_PATH}/${L_TARGET_NAME_WE}.hex"
-        COMMENT "Generate Intel HEX file: ${L_TARGET_PATH}/${L_TARGET_NAME_WE}.hex"
-    )
-    set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${L_TARGET_PATH}/${L_TARGET_NAME_WE}.hex")
+
+    # generate an Intel HEX file out of the ELF target, if required
+    if(CHIBIOS_GENERATE_HEX_FILE)
+        chibios_generate_output(${name} "ihex" "${L_TARGET_PATH}/${L_TARGET_NAME_WE}.hex")
+    endif()
+
+    # generate a binary file out of the ELF target, if required
+    if(CHIBIOS_GENERATE_BIN_FILE)
+        chibios_generate_output(${name} "binary" "${L_TARGET_PATH}/${L_TARGET_NAME_WE}.bin")
+    endif()
 
 endmacro()
-
