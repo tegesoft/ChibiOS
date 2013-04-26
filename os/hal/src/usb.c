@@ -242,6 +242,7 @@ void usbObjectInit(USBDriver *usbp) {
   usbp->state        = USB_STOP;
   usbp->config       = NULL;
   usbp->param        = NULL;
+  usbp->serial_param = NULL;
   usbp->transmitting = 0;
   usbp->receiving    = 0;
 }
