@@ -214,7 +214,7 @@ void sduStart(SerialUSBDriver *sdup, const SerialUSBConfig *config) {
               "sduStart(), #1",
               "invalid state");
   sdup->config = config;
-  config->usbp->param = sdup;
+  config->usbp->serial_param = sdup;
   sdup->state = SDU_READY;
   chSysUnlock();
 }
@@ -254,7 +254,7 @@ void sduStop(SerialUSBDriver *sdup) {
  * @iclass
  */
 void sduConfigureHookI(USBDriver *usbp) {
-  SerialUSBDriver *sdup = usbp->param;
+  SerialUSBDriver *sdup = usbp->serial_param;
 
   chIQResetI(&sdup->iqueue);
   chOQResetI(&sdup->oqueue);
@@ -312,7 +312,7 @@ bool_t sduRequestsHook(USBDriver *usbp) {
  */
 void sduDataTransmitted(USBDriver *usbp, usbep_t ep) {
   size_t n;
-  SerialUSBDriver *sdup = usbp->param;
+  SerialUSBDriver *sdup = usbp->serial_param;
 
   if (sdup->state != SDU_READY)
     return;
@@ -358,7 +358,7 @@ void sduDataTransmitted(USBDriver *usbp, usbep_t ep) {
  */
 void sduDataReceived(USBDriver *usbp, usbep_t ep) {
   size_t n, maxsize;
-  SerialUSBDriver *sdup = usbp->param;
+  SerialUSBDriver *sdup = usbp->serial_param;
 
   if (sdup->state != SDU_READY)
     return;

@@ -369,6 +369,12 @@ struct USBDriver {
    */
   void                          *param;
   /**
+   * @brief   Additional application-defined field, which is used if the serial_usb
+   *          driver is activated, so that the 'param' variable above is *really* left
+   *          to the user (which can be useful for composite USB)
+   */
+  void                          *serial_param;
+  /**
    * @brief   Bit map of the transmitting IN endpoints.
    */
   uint16_t                      transmitting;
