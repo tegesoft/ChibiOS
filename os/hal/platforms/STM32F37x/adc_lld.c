@@ -1,21 +1,17 @@
 /*
-    ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012,2013 Giovanni Di Sirio.
+    ChibiOS/RT - Copyright (C) 2006-2013 Giovanni Di Sirio
 
-    This file is part of ChibiOS/RT.
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-    ChibiOS/RT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+        http://www.apache.org/licenses/LICENSE-2.0
 
-    ChibiOS/RT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
 
 /**
@@ -31,29 +27,23 @@
 
 #if HAL_USE_ADC || defined(__DOXYGEN__)
 
-int debugzero = 0;
-
 /*===========================================================================*/
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
 
-#define ADC1_DMA_CHANNEL                                                    \
-  STM32_DMA_GETCHANNEL(STM32_ADC_ADC1_DMA_STREAM, STM32_ADC1_DMA_CHN)
+#define SDADC_FORBIDDEN_CR1_FLAGS   (SDADC_CR1_INIT   | SDADC_CR1_RDMAEN |  \
+                                     SDADC_CR1_RSYNC  | SDADC_CR1_JSYNC  |  \
+                                     SDADC_CR1_ROVRIE | SDADC_CR1_REOCIE |  \
+                                     SDADC_CR1_JEOCIE | SDADC_CR1_EOCALIE)
 
-#define ADC2_DMA_CHANNEL                                                    \
-  STM32_DMA_GETCHANNEL(STM32_ADC_ADC2_DMA_STREAM, STM32_ADC2_DMA_CHN)
+#define SDADC_ENFORCED_CR1_FLAGS    (SDADC_CR1_JDMAEN  | SDADC_CR1_JOVRIE)
 
-#define ADC3_DMA_CHANNEL                                                    \
-  STM32_DMA_GETCHANNEL(STM32_ADC_ADC3_DMA_STREAM, STM32_ADC3_DMA_CHN)
-
-#define SDADC1_DMA_CHANNEL                                                    \
-  STM32_DMA_GETCHANNEL(STM32_ADC_SDADC1_DMA_STREAM, STM32_SDADC1_DMA_CHN)
-
-#define SDADC2_DMA_CHANNEL                                                    \
-  STM32_DMA_GETCHANNEL(STM32_ADC_SDADC2_DMA_STREAM, STM32_SDADC2_DMA_CHN)
-
-#define SDADC3_DMA_CHANNEL                                                    \
-  STM32_DMA_GETCHANNEL(STM32_ADC_SDADC3_DMA_STREAM, STM32_SDADC3_DMA_CHN)
+#define SDADC_FORBIDDEN_CR2_FLAGS   (SDADC_CR2_RSWSTART   |                 \
+                                     SDADC_CR2_RCONT      |                 \
+                                     SDADC_CR2_RCH        |                 \
+                                     SDADC_CR2_JCONT      |                 \
+                                     SDADC_CR2_STARTCALIB |                 \
+                                     SDADC_CR2_CALIBCNT)
 
 /*===========================================================================*/
 /* Driver exported variables.                                                */
@@ -62,16 +52,6 @@ int debugzero = 0;
 /** @brief ADC1 driver identifier.*/
 #if STM32_ADC_USE_ADC1 || defined(__DOXYGEN__)
 ADCDriver ADCD1;
-#endif
-
-/** @brief ADC2 driver identifier.*/
-#if STM32_ADC_USE_ADC2 || defined(__DOXYGEN__)
-ADCDriver ADCD2;
-#endif
-
-/** @brief ADC3 driver identifier.*/
-#if STM32_ADC_USE_ADC3 || defined(__DOXYGEN__)
-ADCDriver ADCD3;
 #endif
 
 /** @brief SDADC1 driver identifier.*/
@@ -90,22 +70,83 @@ ADCDriver SDADCD3;
 #endif
 
 /*===========================================================================*/
-/* Driver local variables.                                                   */
+/* Driver local variables and types.                                         */
 /*===========================================================================*/
+
+static const ADCConfig adc_lld_default_config = {
+#if STM32_ADC_USE_SDADC
+  0,
+  {
+     0,
+     0,
+     0
+  }
+#else /* !STM32_ADC_USE_SDADC */
+  0
+#endif /* !STM32_ADC_USE_SDADC */
+};
 
 /*===========================================================================*/
 /* Driver local functions.                                                   */
 /*===========================================================================*/
-static bool_t isADCDriverForSigmaDeltaADC(ADCDriver *adcp);
-static bool_t isADCDriverForSuccApproxADC(ADCDriver *adcp);
+
+/**
+ * @brief   Stops, reconfigures and restarts an ADC/SDADC.
+ *
+ * @param[in] adcp      pointer to the @p ADCDriver object
+ */
+static void adc_lld_reconfig(ADCDriver *adcp) {
+
+#if STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC
+  if (adcp->adc != NULL)
+#endif /* STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC */
+#if STM32_ADC_USE_ADC
+  {
+    /* ADC initial setup, starting the analog part here in order to reduce
+       the latency when starting a conversion.*/
+    uint32_t cr2 = adcp->adc->CR2 & ADC_CR2_TSVREFE;
+    adcp->adc->CR2 = cr2;
+    adcp->adc->CR1 = 0;
+    adcp->adc->CR2 = cr2 | ADC_CR2_ADON;
+
+  }
+#endif /* STM32_ADC_USE_ADC */
+#if STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC
+  else if (adcp->sdadc != NULL)
+#endif /* STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC */
+#if STM32_ADC_USE_SDADC
+  {
+    /* SDADC initial setup, starting the analog part here in order to reduce
+       the latency when starting a conversion.*/
+    adcp->sdadc->CR2    = 0;
+    adcp->sdadc->CR1    = (adcp->config->cr1 | SDADC_ENFORCED_CR1_FLAGS) &
+                          ~SDADC_FORBIDDEN_CR1_FLAGS;
+    adcp->sdadc->CONF0R = (adcp->sdadc->CONF0R & SDADC_CONFR_OFFSET_MASK) |
+                          adcp->config->confxr[0];
+    adcp->sdadc->CONF1R = (adcp->sdadc->CONF1R & SDADC_CONFR_OFFSET_MASK) |
+                          adcp->config->confxr[1];
+    adcp->sdadc->CONF2R = (adcp->sdadc->CONF2R & SDADC_CONFR_OFFSET_MASK) |
+                          adcp->config->confxr[2];
+    adcp->sdadc->CR2    = SDADC_CR2_ADON;
+  }
+#endif /* STM32_ADC_USE_SDADC */
+#if STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC
+else {
+    chDbgAssert(FALSE, "adc_lld_start(), #5", "invalid state");
+  }
+#endif /* STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC */
+}
 
 /**
  * @brief   ADC DMA ISR service routine.
  *
  * @param[in] adcp      pointer to the @p ADCDriver object
  * @param[in] flags     pre-shifted content of the ISR register
+ *
+ * @notapi
  */
-static void adc_lld_serve_rx_interrupt(ADCDriver *adcp, uint32_t flags) {
+static void adc_lld_serve_dma_interrupt(ADCDriver *adcp, uint32_t flags) {
+
   /* DMA errors handling.*/
   if ((flags & (STM32_DMA_ISR_TEIF | STM32_DMA_ISR_DMEIF)) != 0) {
     /* DMA, this could help only if the DMA tries to access an unmapped
@@ -128,27 +169,133 @@ static void adc_lld_serve_rx_interrupt(ADCDriver *adcp, uint32_t flags) {
   }
 }
 
+#if STM32_ADC_USE_ADC || defined(__DOXYGEN__)
+/**
+ * @brief   ADC ISR service routine.
+ *
+ * @param[in] adcp      pointer to the @p ADCDriver object
+ * @param[in] sr        content of the ISR register
+ *
+ * @notapi
+ */
+static void adc_lld_serve_interrupt(ADCDriver *adcp, uint32_t sr) {
+
+  /* It could be a spurious interrupt caused by overflows after DMA disabling,
+     just ignore it in this case.*/
+  if (adcp->grpp != NULL) {
+    if (sr & ADC_SR_AWD) {
+      /* Analog watchdog error.*/
+      _adc_isr_error_code(adcp, ADC_ERR_AWD1);
+    }
+  }
+}
+#endif /* STM32_ADC_USE_ADC */
+
+#if STM32_ADC_USE_SDADC || defined(__DOXYGEN__)
+/**
+ * @brief   ADC ISR service routine.
+ *
+ * @param[in] adcp      pointer to the @p ADCDriver object
+ * @param[in] isr       content of the ISR register
+ *
+ * @notapi
+ */
+static void sdadc_lld_serve_interrupt(ADCDriver *adcp, uint32_t isr) {
+
+  /* It could be a spurious interrupt caused by overflows after DMA disabling,
+     just ignore it in this case.*/
+  if (adcp->grpp != NULL) {
+    /* Note, an overflow may occur after the conversion ended before the driver
+       is able to stop the ADC, this is why the DMA channel is checked too.*/
+    if ((isr & SDADC_ISR_JOVRF) &&
+        (dmaStreamGetTransactionSize(adcp->dmastp) > 0)) {
+      /* ADC overflow condition, this could happen only if the DMA is unable
+         to read data fast enough.*/
+      _adc_isr_error_code(adcp, ADC_ERR_OVERFLOW);
+    }
+  }
+}
+#endif /* STM32_ADC_USE_SDADC */
+
 /*===========================================================================*/
 /* Driver interrupt handlers.                                                */
 /*===========================================================================*/
 
-#if STM32_ADC_USE_ADC1 || STM32_ADC_USE_ADC2 || STM32_ADC_USE_ADC3 ||       \
-    defined(__DOXYGEN__)
+#if STM32_ADC_USE_ADC1 || defined(__DOXYGEN__)
 /**
- * @brief   ADC interrupt handler.
+ * @brief   ADC1 interrupt handler.
  *
  * @isr
  */
-CH_IRQ_HANDLER(ADC1_2_3_IRQHandler) {
+CH_IRQ_HANDLER(Vector88) {
+  uint32_t sr;
+
   CH_IRQ_PROLOGUE();
 
-#if STM32_ADC_USE_ADC1
-  /* TODO: Add here analog watchdog handling.*/
-#endif /* STM32_ADC_USE_ADC1 */
+  sr  = ADC1->SR;
+  ADC1->SR = 0;
+  adc_lld_serve_interrupt(&ADCD1, sr);
 
   CH_IRQ_EPILOGUE();
 }
-#endif
+#endif /* STM32_ADC_USE_ADC1 */
+
+#if STM32_ADC_USE_SDADC1 || defined(__DOXYGEN__)
+/**
+ * @brief   SDADC1 interrupt handler.
+ *
+ * @isr
+ */
+CH_IRQ_HANDLER(Vector134) {
+  uint32_t isr;
+
+  CH_IRQ_PROLOGUE();
+
+  isr  = SDADC1->ISR;
+  SDADC1->CLRISR = isr;
+  sdadc_lld_serve_interrupt(&SDADCD1, isr);
+
+  CH_IRQ_EPILOGUE();
+}
+#endif /* STM32_ADC_USE_SDADC1 */
+
+#if STM32_ADC_USE_SDADC2 || defined(__DOXYGEN__)
+/**
+ * @brief   SDADC2 interrupt handler.
+ *
+ * @isr
+ */
+CH_IRQ_HANDLER(Vector138) {
+  uint32_t isr;
+
+  CH_IRQ_PROLOGUE();
+
+  isr  = SDADC2->ISR;
+  SDADC2->CLRISR = isr;
+  sdadc_lld_serve_interrupt(&SDADCD2, isr);
+
+  CH_IRQ_EPILOGUE();
+}
+#endif /* STM32_ADC_USE_SDADC2 */
+
+#if STM32_ADC_USE_SDADC3 || defined(__DOXYGEN__)
+/**
+ * @brief   SDADC3 interrupt handler.
+ *
+ * @isr
+ */
+CH_IRQ_HANDLER(Vector13C) {
+  uint32_t isr;
+
+  CH_IRQ_PROLOGUE();
+
+  isr  = SDADC3->ISR;
+  SDADC3->CLRISR = isr;
+  sdadc_lld_serve_interrupt(&SDADCD3, isr);
+
+  CH_IRQ_EPILOGUE();
+}
+#endif /* STM32_ADC_USE_SDADC3 */
 
 /*===========================================================================*/
 /* Driver exported functions.                                                */
@@ -164,356 +311,385 @@ void adc_lld_init(void) {
 #if STM32_ADC_USE_ADC1
   /* Driver initialization.*/
   adcObjectInit(&ADCD1);
-  ADCD1.adc = ADC1;
-  ADCD1.dmastp  = STM32_DMA_STREAM(STM32_ADC_ADC1_DMA_STREAM);
+  ADCD1.adc     = ADC1;
+#if STM32_ADC_USE_SDADC
+  ADCD1.sdadc   = NULL;
+#endif
+  ADCD1.dmastp  = STM32_DMA1_STREAM1;
   ADCD1.dmamode = STM32_DMA_CR_CHSEL(ADC1_DMA_CHANNEL) |
                   STM32_DMA_CR_PL(STM32_ADC_ADC1_DMA_PRIORITY) |
                   STM32_DMA_CR_DIR_P2M |
                   STM32_DMA_CR_MSIZE_HWORD | STM32_DMA_CR_PSIZE_HWORD |
                   STM32_DMA_CR_MINC        | STM32_DMA_CR_TCIE        |
                   STM32_DMA_CR_DMEIE       | STM32_DMA_CR_TEIE;
-#endif
-
-  /* The shared vector is initialized on driver initialization and never
-     disabled.*/
   nvicEnableVector(ADC1_IRQn, CORTEX_PRIORITY_MASK(STM32_ADC_IRQ_PRIORITY));
+#endif
 
 #if STM32_ADC_USE_SDADC1
   /* Driver initialization.*/
   adcObjectInit(&SDADCD1);
+#if STM32_ADC_USE_ADC
+  SDADCD1.adc     = NULL;
+#endif
   SDADCD1.sdadc   = SDADC1;
-  SDADCD1.dmastp  = STM32_DMA_STREAM(STM32_ADC_SDADC1_DMA_STREAM);
+  SDADCD1.dmastp  = STM32_DMA2_STREAM3;
   SDADCD1.dmamode = STM32_DMA_CR_CHSEL(SDADC1_DMA_CHANNEL) |
                   STM32_DMA_CR_PL(STM32_ADC_SDADC1_DMA_PRIORITY) |
                   STM32_DMA_CR_DIR_P2M |
                   STM32_DMA_CR_MSIZE_HWORD | STM32_DMA_CR_PSIZE_HWORD |
                   STM32_DMA_CR_MINC        | STM32_DMA_CR_TCIE        |
                   STM32_DMA_CR_DMEIE       | STM32_DMA_CR_TEIE;
+  nvicEnableVector(SDADC1_IRQn,
+                   CORTEX_PRIORITY_MASK(STM32_ADC_SDADC1_IRQ_PRIORITY));
 #endif
 
 #if STM32_ADC_USE_SDADC2
   /* Driver initialization.*/
   adcObjectInit(&SDADCD2);
+#if STM32_ADC_USE_ADC
+  SDADCD2.adc     = NULL;
+#endif
   SDADCD2.sdadc   = SDADC2;
-  SDADCD2.dmastp  = STM32_DMA_STREAM(STM32_ADC_SDADC2_DMA_STREAM);
+  SDADCD2.dmastp  = STM32_DMA2_STREAM4;
   SDADCD2.dmamode = STM32_DMA_CR_CHSEL(SDADC2_DMA_CHANNEL) |
                   STM32_DMA_CR_PL(STM32_ADC_SDADC2_DMA_PRIORITY) |
                   STM32_DMA_CR_DIR_P2M |
                   STM32_DMA_CR_MSIZE_HWORD | STM32_DMA_CR_PSIZE_HWORD |
                   STM32_DMA_CR_MINC        | STM32_DMA_CR_TCIE        |
                   STM32_DMA_CR_DMEIE       | STM32_DMA_CR_TEIE;
+  nvicEnableVector(SDADC2_IRQn,
+                   CORTEX_PRIORITY_MASK(STM32_ADC_SDADC2_IRQ_PRIORITY));
 #endif
 
 #if STM32_ADC_USE_SDADC3
   /* Driver initialization.*/
   adcObjectInit(&SDADCD3);
+#if STM32_ADC_USE_ADC
+  SDADCD3.adc     = NULL;
+#endif
   SDADCD3.sdadc   = SDADC3;
-  SDADCD3.dmastp  = STM32_DMA_STREAM(STM32_ADC_SDADC3_DMA_STREAM);
+  SDADCD3.dmastp  = STM32_DMA2_STREAM5;
   SDADCD3.dmamode = STM32_DMA_CR_CHSEL(SDADC3_DMA_CHANNEL) |
                   STM32_DMA_CR_PL(STM32_ADC_SDADC3_DMA_PRIORITY) |
                   STM32_DMA_CR_DIR_P2M |
                   STM32_DMA_CR_MSIZE_HWORD | STM32_DMA_CR_PSIZE_HWORD |
                   STM32_DMA_CR_MINC        | STM32_DMA_CR_TCIE        |
                   STM32_DMA_CR_DMEIE       | STM32_DMA_CR_TEIE;
+  nvicEnableVector(SDADC3_IRQn,
+                   CORTEX_PRIORITY_MASK(STM32_ADC_SDADC3_IRQ_PRIORITY));
 #endif
-
-
-  nvicEnableVector(SDADC1_IRQn, CORTEX_PRIORITY_MASK(STM32_ADC_SDADC1_IRQ_PRIORITY));
-  nvicEnableVector(SDADC2_IRQn, CORTEX_PRIORITY_MASK(STM32_ADC_SDADC2_IRQ_PRIORITY));
-  nvicEnableVector(SDADC3_IRQn, CORTEX_PRIORITY_MASK(STM32_ADC_SDADC3_IRQ_PRIORITY));
 }
-
-/**
- * @brief   Initial config for SDADC peripheral.
- *
- * @param[in] adcdp            pointer to the @p ADCDriver object
- * @param[in] dmaPriority     priority for the dma channel 0..3
- * @param[in] rxIsrFunc       isr handler for dma,
- * @param[in] dmaSrcLoc       pointer to the @p SDADC data
- * @param[in] periphEnableBit SDADC bit in rcc APB2 Enable register
- *
- * @notapi
- */
-void sdadc_lld_start_cr_init_helper(ADCDriver*     adcdp, 
-				    uint32_t       dmaPriority, 
-				    stm32_dmaisr_t rxIsrFunc, 
-				    volatile void* dmaSrcLoc, 
-				    uint32_t       periphEnableBit) {
-      bool_t b;
-      b = dmaStreamAllocate(adcdp->dmastp,
-                            dmaPriority,
-                            rxIsrFunc,
-                            adcdp);
-      chDbgAssert(!b, "adc_lld_start(), #1", "stream already allocated");
-      dmaStreamSetPeripheral(adcdp->dmastp, dmaSrcLoc);
-      rccEnableAPB2(periphEnableBit, FALSE);
-      rccResetAPB2(periphEnableBit);
-
-      /* SDADC initial setup, starting the analog part here in order to reduce
-	 the latency when starting a conversion.*/
-
-      /*
-	====== SDADC CR1 settings breakdown =====
-	Initialization mode request               : disabled
-	DMA Enabled to read data for reg ch. grp  : disabled
-	DMA Enabled to read data for inj ch. grp  : disabled
-	Launch reg conv sync w SDADC1             : Do not
-	Launch injected conv sync w SDADC1        : Do not
-	Enter power down mode when idle           : False
-	Enter standby mode when idle              : False
-	Slow clock mode                           : fast mode
-	Reference voltage selection               : external Vref
-	reg data overrun interrupt                : disabled
-	reg data end of conversion interrupt      : disabled
-	injected data overrun interrupt           : disabled
-	injected data end of conversion interrupt : disabled
-	end of calibration interrupt              : disabled
-       */
-      adcdp->sdadc->CR1 = 0;
-
-      /*
-	====== SDADC CR1 settings breakdown =====
-	SDADC enable                                    : X
-	Number of calibration sequences to be performed : 0 
-	Start calibration                               : NO
-	Continuous mode selection for injected conv     : once
-	Delay start of injected conversions             : asap
-	Trig sig sel for launching inj conv             : TIM13_CH1,TIM17_CH1, TIM16_CH1
-	Trig en and trig edge sel for injected conv     : disabled
-	Start a conv of the inj group of ch             : 0
-	Regular channel sel (0-8)                       : 0 
-	Continuous mode sel for regular conv            : once
-	Software start of a conversion on the regular ch: 0
-	Fast conv mode sel                              : disabled
-      */
-      adcdp->sdadc->CR2 = 0;
-      adcdp->sdadc->CR2 = SDADC_CR2_ADON;
-}
-
-
 
 /**
  * @brief   Configures and activates the ADC peripheral.
  *
- * @param[in] adcdp      pointer to the @p ADCDriver object
+ * @param[in] adcp      pointer to the @p ADCDriver object
  *
  * @notapi
  */
-void adc_lld_start(ADCDriver *adcdp) {
+void adc_lld_start(ADCDriver *adcp) {
+
+  if (adcp->config == NULL)
+    adcp->config = &adc_lld_default_config;
 
   /* If in stopped state then enables the ADC and DMA clocks.*/
-  if (adcdp->state == ADC_STOP) {
+  if (adcp->state == ADC_STOP) {
 #if STM32_ADC_USE_ADC1
-    if (&ADCD1 == adcdp) {
+    if (&ADCD1 == adcp) {
       bool_t b;
-      b = dmaStreamAllocate(adcdp->dmastp,
+      b = dmaStreamAllocate(adcp->dmastp,
                             STM32_ADC_ADC1_DMA_IRQ_PRIORITY,
-                            (stm32_dmaisr_t)adc_lld_serve_rx_interrupt,
-                            (void *)adcdp);
+                            (stm32_dmaisr_t)adc_lld_serve_dma_interrupt,
+                            (void *)adcp);
       chDbgAssert(!b, "adc_lld_start(), #1", "stream already allocated");
-      dmaStreamSetPeripheral(adcdp->dmastp, &ADC1->DR);
+      dmaStreamSetPeripheral(adcp->dmastp, &ADC1->DR);
       rccEnableADC1(FALSE);
-
-      /* ADC initial setup, starting the analog part here in order to reduce
-	 the latency when starting a conversion.*/
-      adcdp->adc->CR1 = 0;
-      adcdp->adc->CR2 = 0;
-      adcdp->adc->CR2 = ADC_CR2_ADON;
     }
 #endif /* STM32_ADC_USE_ADC1 */
 
 #if STM32_ADC_USE_SDADC1
-    if (&SDADCD1 == adcdp) {
-      sdadc_lld_start_cr_init_helper(adcdp,
-				     STM32_ADC_SDADC1_DMA_IRQ_PRIORITY,
-				     (stm32_dmaisr_t) adc_lld_serve_rx_interrupt,
-				     &SDADC1->RDATAR,
-				     RCC_APB2ENR_SDADC1EN);
-      rccEnablePWRInterface(FALSE);
+    if (&SDADCD1 == adcp) {
+      bool_t b = dmaStreamAllocate(adcp->dmastp,
+                                   STM32_ADC_SDADC1_DMA_IRQ_PRIORITY,
+                                   (stm32_dmaisr_t)adc_lld_serve_dma_interrupt,
+                                   (void *)adcp);
+      chDbgAssert(!b, "adc_lld_start(), #2", "stream already allocated");
+      dmaStreamSetPeripheral(adcp->dmastp, &SDADC1->JDATAR);
+      rccEnableSDADC1(FALSE);
       PWR->CR |= PWR_CR_SDADC1EN;
-
+      adcp->sdadc->CR2 = 0;
+      adcp->sdadc->CR1 = (adcp->config->cr1 | SDADC_ENFORCED_CR1_FLAGS) &
+                         ~SDADC_FORBIDDEN_CR1_FLAGS;
+      adcp->sdadc->CR2 = SDADC_CR2_ADON;
     }
 #endif /* STM32_ADC_USE_SDADC1 */
 
 #if STM32_ADC_USE_SDADC2
-    if (&SDADCD2 == adcdp) {
-      sdadc_lld_start_cr_init_helper(adcdp,
-				     STM32_ADC_SDADC2_DMA_IRQ_PRIORITY,
-				     (stm32_dmaisr_t) adc_lld_serve_rx_interrupt,
-				     &SDADC2->RDATAR,
-				     RCC_APB2ENR_SDADC2EN);
-
-      rccEnablePWRInterface(FALSE);
+    if (&SDADCD2 == adcp) {
+      bool_t b = dmaStreamAllocate(adcp->dmastp,
+                                   STM32_ADC_SDADC2_DMA_IRQ_PRIORITY,
+                                   (stm32_dmaisr_t)adc_lld_serve_dma_interrupt,
+                                   (void *)adcp);
+      chDbgAssert(!b, "adc_lld_start(), #3", "stream already allocated");
+      dmaStreamSetPeripheral(adcp->dmastp, &SDADC2->JDATAR);
+      rccEnableSDADC1(FALSE);
       PWR->CR |= PWR_CR_SDADC2EN;
+      adcp->sdadc->CR2 = 0;
+      adcp->sdadc->CR1 = (adcp->config->cr1 | SDADC_ENFORCED_CR1_FLAGS) &
+                         ~SDADC_FORBIDDEN_CR1_FLAGS;
+      adcp->sdadc->CR2 = SDADC_CR2_ADON;
     }
 #endif /* STM32_ADC_USE_SDADC2 */
 
 #if STM32_ADC_USE_SDADC3
-    if (&SDADCD3 == adcdp) {
-      sdadc_lld_start_cr_init_helper(adcdp,
-				     STM32_ADC_SDADC3_DMA_IRQ_PRIORITY,
-				     (stm32_dmaisr_t) adc_lld_serve_rx_interrupt,
-				     &SDADC3->RDATAR,
-				     RCC_APB2ENR_SDADC3EN);
-      rccEnablePWRInterface(FALSE);
+    if (&SDADCD3 == adcp) {
+      bool_t b = dmaStreamAllocate(adcp->dmastp,
+                                   STM32_ADC_SDADC3_DMA_IRQ_PRIORITY,
+                                   (stm32_dmaisr_t)adc_lld_serve_dma_interrupt,
+                                   (void *)adcp);
+      chDbgAssert(!b, "adc_lld_start(), #4", "stream already allocated");
+      dmaStreamSetPeripheral(adcp->dmastp, &SDADC3->JDATAR);
+      rccEnableSDADC1(FALSE);
       PWR->CR |= PWR_CR_SDADC3EN;
+      adcp->sdadc->CR2 = 0;
+      adcp->sdadc->CR1 = (adcp->config->cr1 | SDADC_ENFORCED_CR1_FLAGS) &
+                         ~SDADC_FORBIDDEN_CR1_FLAGS;
+      adcp->sdadc->CR2 = SDADC_CR2_ADON;
     }
 #endif /* STM32_ADC_USE_SDADC3 */
-
   }
+
+  adc_lld_reconfig(adcp);
 }
 
 /**
  * @brief   Deactivates the ADC peripheral.
  *
- * @param[in] adcdp      pointer to the @p ADCDriver object
+ * @param[in] adcp      pointer to the @p ADCDriver object
  *
  * @notapi
  */
-void adc_lld_stop(ADCDriver *adcdp) {
+void adc_lld_stop(ADCDriver *adcp) {
 
   /* If in ready state then disables the ADC clock.*/
-  if (adcdp->state == ADC_READY) {
-    dmaStreamRelease(adcdp->dmastp);
-    adcdp->adc->CR1 = 0;
-    adcdp->adc->CR2 = 0;
+  if (adcp->state == ADC_READY) {
+    dmaStreamRelease(adcp->dmastp);
 
 #if STM32_ADC_USE_ADC1
-    if (&ADCD1 == adcdp)
+    if (&ADCD1 == adcp) {
+      adcp->adc->CR1 = 0;
+      adcp->adc->CR2 = 0;
       rccDisableADC1(FALSE);
+    }
 #endif
-
-#if STM32_ADC_USE_ADC2
-    if (&ADCD2 == adcdp)
-      rccDisableADC2(FALSE);
-#endif
-
-#if STM32_ADC_USE_ADC3
-    if (&ADCD3 == adcdp)
-      rccDisableADC3(FALSE);
-#endif
-  }
 
 #if STM32_ADC_USE_SDADC1
-    if (&SDADCD1 == adcdp)
+    if (&SDADCD1 == adcp) {
+      adcp->sdadc->CR1 = 0;
+      adcp->sdadc->CR2 = 0;
       rccDisableSDADC1(FALSE);
+      PWR->CR &= ~PWR_CR_SDADC1EN;
+    }
 #endif
 
 #if STM32_ADC_USE_SDADC2
-    if (&SDADCD2 == adcdp)
+    if (&SDADCD2 == adcp) {
+      adcp->sdadc->CR1 = 0;
+      adcp->sdadc->CR2 = 0;
       rccDisableSDADC2(FALSE);
+      PWR->CR &= ~PWR_CR_SDADC2EN;
+    }
 #endif
 
 #if STM32_ADC_USE_SDADC3
-    if (&SDADCD3 == adcdp)
+    if (&SDADCD3 == adcp) {
+      adcp->sdadc->CR1 = 0;
+      adcp->sdadc->CR2 = 0;
       rccDisableSDADC3(FALSE);
+      PWR->CR &= ~PWR_CR_SDADC3EN;
+    }
 #endif
-
-
+  }
 }
 
 /**
  * @brief   Starts an ADC conversion.
  *
- * @param[in] adcdp      pointer to the @p ADCDriver object
+ * @param[in] adcp      pointer to the @p ADCDriver object
  *
  * @notapi
  */
-void adc_lld_start_conversion(ADCDriver *adcdp) {
+void adc_lld_start_conversion(ADCDriver *adcp) {
   uint32_t mode;
-
-  const ADCConversionGroup* grpp = adcdp->grpp;
+  const ADCConversionGroup* grpp = adcp->grpp;
 
   /* DMA setup.*/
-  mode = adcdp->dmamode;
+  mode = adcp->dmamode;
   if (grpp->circular) {
     mode |= STM32_DMA_CR_CIRC;
   }
-  if (adcdp->depth > 1) {
+  if (adcp->depth > 1) {
     /* If the buffer depth is greater than one then the half transfer interrupt
        interrupt is enabled in order to allows streaming processing.*/
     mode |= STM32_DMA_CR_HTIE;
   }
-  dmaStreamSetMemory0(adcdp->dmastp, adcdp->samples);
-  dmaStreamSetTransactionSize(adcdp->dmastp, 
+  dmaStreamSetMemory0(adcp->dmastp, adcp->samples);
+  dmaStreamSetTransactionSize(adcp->dmastp,
 			      (uint32_t)grpp->num_channels * 
-			      (uint32_t)adcdp->depth);
-  dmaStreamSetMode(adcdp->dmastp, mode);
-  dmaStreamEnable(adcdp->dmastp);
+			      (uint32_t)adcp->depth);
+  dmaStreamSetMode(adcp->dmastp, mode);
+  dmaStreamEnable(adcp->dmastp);
 
-  if (isADCDriverForSuccApproxADC(adcdp)) {
+#if STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC
+  if (adcp->adc != NULL)
+#endif /* STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC */
+#if STM32_ADC_USE_ADC
+  {
+    uint32_t cr2 = adcp->adc->CR2 & ADC_CR2_TSVREFE;
+    cr2 |= grpp->u.adc.cr2 | ADC_CR2_DMA | ADC_CR2_ADON;
+    if ((cr2 & ADC_CR2_SWSTART) != 0)
+      cr2 |= ADC_CR2_CONT;
+    adcp->adc->CR2   = cr2;
+
     /* ADC setup.*/
-    adcdp->adc->SR    = 0;
-    adcdp->adc->SMPR1 = grpp->ll.adc.smpr1;
-    adcdp->adc->SMPR2 = grpp->ll.adc.smpr2;
-    adcdp->adc->SQR1  = grpp->ll.adc.sqr1;
-    adcdp->adc->SQR2  = grpp->ll.adc.sqr2;
-    adcdp->adc->SQR3  = grpp->ll.adc.sqr3;
+    adcp->adc->SR    = 0;
+    adcp->adc->LTR   = grpp->u.adc.ltr;
+    adcp->adc->HTR   = grpp->u.adc.htr;
+    adcp->adc->SMPR1 = grpp->u.adc.smpr[0];
+    adcp->adc->SMPR2 = grpp->u.adc.smpr[1];
+    adcp->adc->SQR1  = grpp->u.adc.sqr[0] |
+                       ADC_SQR1_NUM_CH(grpp->num_channels);
+    adcp->adc->SQR2  = grpp->u.adc.sqr[1];
+    adcp->adc->SQR3  = grpp->u.adc.sqr[2];
 
-    /* ADC configuration and start, the start is performed using the method
+    /* ADC conversion start, the start is performed using the method
        specified in the CR2 configuration, usually ADC_CR2_SWSTART.*/
-    adcdp->adc->CR1   = grpp->ll.adc.cr1 | ADC_CR1_SCAN;
-    if ((grpp->ll.adc.cr2 & ADC_CR2_SWSTART) != 0)
-      adcdp->adc->CR2 = grpp->ll.adc.cr2 | ADC_CR2_CONT
-	                                 | ADC_CR2_DMA | ADC_CR2_ADON;
-    else
-      adcdp->adc->CR2 = grpp->ll.adc.cr2 | ADC_CR2_DMA | ADC_CR2_ADON;
+    adcp->adc->CR1   = grpp->u.adc.cr1 | ADC_CR1_AWDIE | ADC_CR1_SCAN;
+    adcp->adc->CR2   = adcp->adc->CR2;  /* Triggers the conversion start.*/
   }
-  else if (isADCDriverForSigmaDeltaADC(adcdp)) {
-    /* For Sigma-Delta ADC */
+#endif /* STM32_ADC_USE_ADC */
+#if STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC
+  else if (adcp->sdadc != NULL)
+#endif /* STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC */
+#if STM32_ADC_USE_SDADC
+  {
+    uint32_t cr2 = (grpp->u.sdadc.cr2 & ~SDADC_FORBIDDEN_CR2_FLAGS) |
+                   SDADC_CR2_ADON;
+    if ((grpp->u.sdadc.cr2 & SDADC_CR2_JSWSTART) != 0)
+      cr2 |= SDADC_CR2_JCONT;
 
-    sdadcSTM32SetInitializationMode(adcdp, true);
+    /* Entering initialization mode.*/
+    adcp->sdadc->CR1 |= SDADC_CR1_INIT;
+    while ((adcp->sdadc->ISR & SDADC_ISR_INITRDY) == 0)
+      ;
 
     /* SDADC setup.*/
-    adcdp->sdadc->CONF0R   = grpp->ll.sdadc.conf0r;
-    adcdp->sdadc->CONF1R   = grpp->ll.sdadc.conf1r;
-    adcdp->sdadc->CONF2R   = grpp->ll.sdadc.conf2r;
-    adcdp->sdadc->CONFCHR1 = grpp->ll.sdadc.confchr1;
-    adcdp->sdadc->CONFCHR2 = grpp->ll.sdadc.confchr2;
+    adcp->sdadc->JCHGR    = grpp->u.sdadc.jchgr;
+    adcp->sdadc->CONFCHR1 = grpp->u.sdadc.confchr[0];
+    adcp->sdadc->CONFCHR2 = grpp->u.sdadc.confchr[1];
 
-    sdadcSTM32SetInitializationMode(adcdp, false);
+    /* Leaving initialization mode.*/
+    adcp->sdadc->CR1 &= ~SDADC_CR1_INIT;
 
-    /* SDADC configuration and start, the start is performed using the method
-       specified in the CR2 configuration, usually ADC_CR2_SWSTART.*/
-    adcdp->sdadc->CR1 = grpp->ll.sdadc.cr1 | SDADC_CR1_RDMAEN;
-    adcdp->sdadc->CR2 = grpp->ll.sdadc.cr2 | SDADC_CR2_ADON;
-
+    /* SDADC conversion start, the start is performed using the method
+       specified in the CR2 configuration, usually SDADC_CR2_JSWSTART.*/
+    adcp->sdadc->CR2 = cr2;
   }
+#endif /* STM32_ADC_USE_SDADC */
+#if STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC
+  else {
+    chDbgAssert(FALSE, "adc_lld_start_conversion(), #1", "invalid state");
+  }
+#endif /* STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC */
 }
-bool_t stopconv = FALSE;
 
 /**
  * @brief   Stops an ongoing conversion.
  *
- * @param[in] adcdp      pointer to the @p ADCDriver object
+ * @param[in] adcp      pointer to the @p ADCDriver object
  *
  * @notapi
  */
-void adc_lld_stop_conversion(ADCDriver *adcdp) {
-  dmaStreamDisable(adcdp->dmastp);
+void adc_lld_stop_conversion(ADCDriver *adcp) {
 
-  if (isADCDriverForSuccApproxADC(adcdp)) {
-    adcdp->adc->CR1 = 0;
-    adcdp->adc->CR2 = 0;
-    adcdp->adc->CR2 = ADC_CR2_ADON;
-  }
-  else if (isADCDriverForSigmaDeltaADC(adcdp)) {
-    adcdp->sdadc->CR1 = 0;
-    adcdp->sdadc->CR2 = 0;
-    adcdp->sdadc->CR2 = ADC_CR2_ADON;
-  }
+  /* Disabling the associated DMA stream.*/
+  dmaStreamDisable(adcp->dmastp);
+
+  /* Stopping and restarting the whole ADC, apparently the only way to stop
+     a conversion.*/
+  adc_lld_reconfig(adcp);
 }
 
-#if 0
+/**
+ * @brief   Calibrates an ADC unit.
+ * @note    The calibration must be performed after calling @p adcStart().
+ * @note    For SDADC units it is assumed that the field SDADC_CR2_CALIBCNT
+ *          has been
+ *
+ * @param[in] adcp      pointer to the @p ADCDriver object
+ *
+ * @api
+ */
+void adcSTM32Calibrate(ADCDriver *adcp) {
+
+  chDbgAssert((adcp->state == ADC_READY) ||
+              (adcp->state == ADC_COMPLETE) ||
+              (adcp->state == ADC_ERROR),
+              "adcSTM32Calibrate(), #1", "not ready");
+
+#if STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC
+  if (adcp->adc != NULL)
+#endif /* STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC */
+#if STM32_ADC_USE_ADC
+  {
+    /* Resetting calibration just to be safe.*/
+    ADC1->CR2 = ADC_CR2_ADON | ADC_CR2_RSTCAL;
+    while ((ADC1->CR2 & ADC_CR2_RSTCAL) != 0)
+      ;
+
+    /* Calibration.*/
+    ADC1->CR2 = ADC_CR2_ADON | ADC_CR2_CAL;
+    while ((ADC1->CR2 & ADC_CR2_CAL) != 0)
+      ;
+  }
+#endif /* STM32_ADC_USE_ADC */
+#if STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC
+  else if (adcp->sdadc != NULL)
+#endif /* STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC */
+#if STM32_ADC_USE_SDADC
+  {
+    /* Selecting a full calibration in three steps.*/
+    adcp->sdadc->CR2  = (adcp->sdadc->CR2 & ~SDADC_CR2_CALIBCNT) |
+                        SDADC_CR2_CALIBCNT_1;
+
+    /* Calibration.*/
+    adcp->sdadc->CR2 |= SDADC_CR2_STARTCALIB;
+    while ((adcp->sdadc->ISR & SDADC_ISR_EOCALF) == 0)
+      ;
+
+    /* Clearing the EOCALF flag.*/
+    adcp->sdadc->CLRISR |= SDADC_ISR_CLREOCALF;
+  }
+#endif /* STM32_ADC_USE_SDADC */
+#if STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC
+  else {
+    chDbgAssert(FALSE, "adcSTM32Calibrate(), #2", "invalid state");
+  }
+#endif /* STM32_ADC_USE_ADC && STM32_ADC_USE_SDADC */
+}
+
+#if STM32_ADC_USE_ADC || defined(__DOXYGEN__)
 /**
  * @brief   Enables the TSVREFE bit.
  * @details The TSVREFE bit is required in order to sample the internal
  *          temperature sensor and internal reference voltage.
  * @note    This is an STM32-only functionality.
+ *
+ * @api
  */
 void adcSTM32EnableTSVREFE(void) {
 
-  ADC->CCR |= ADC_CCR_TSVREFE;
+  ADC1->CR2 |= ADC_CR2_TSVREFE;
 }
 
 /**
@@ -521,190 +697,38 @@ void adcSTM32EnableTSVREFE(void) {
  * @details The TSVREFE bit is required in order to sample the internal
  *          temperature sensor and internal reference voltage.
  * @note    This is an STM32-only functionality.
+ *
+ * @api
  */
 void adcSTM32DisableTSVREFE(void) {
 
-  ADC->CCR &= ~ADC_CCR_TSVREFE;
+  ADC1->CR2 &= ~ADC_CR2_TSVREFE;
 }
 
 /**
  * @brief   Enables the VBATE bit.
  * @details The VBATE bit is required in order to sample the VBAT channel.
  * @note    This is an STM32-only functionality.
- * @note    This function is meant to be called after @p adcStart().
+ *
+ * @api
  */
 void adcSTM32EnableVBATE(void) {
 
-  ADC->CCR |= ADC_CCR_VBATE;
+  SYSCFG->CFGR1 |= SYSCFG_CFGR1_VBAT;
 }
 
 /**
  * @brief   Disables the VBATE bit.
  * @details The VBATE bit is required in order to sample the VBAT channel.
  * @note    This is an STM32-only functionality.
- * @note    This function is meant to be called after @p adcStart().
+ *
+ * @api
  */
 void adcSTM32DisableVBATE(void) {
 
-  ADC->CCR &= ~ADC_CCR_VBATE;
+  SYSCFG->CFGR1 &= ~SYSCFG_CFGR1_VBAT;
 }
-#endif
-
-/**
- * @brief   Sets the VREF for the 3 Sigma-Delta ADC Converters
- * @details VREF can be changed only when all SDADCs are disabled. Disables all SDADCs, sets the value and then sleeps 5 ms waiting for the change to occur.
- * @note    This is an STM32-only functionality.
- * @param[in] adcdp      pointer to the @p ADCDriver object
- * @param[in] enable    true means init mode, false means exit init mode
- *
- */
-void sdadcSTM32VREFSelect(SDADC_VREF_SEL svs)
-{
-  uint32_t tmpcr1, sdadc1_adon, sdadc2_adon, sdadc3_adon;
-
-  sdadc1_adon = SDADC1->CR2 & SDADC_CR2_ADON;
-  sdadc2_adon = SDADC2->CR2 & SDADC_CR2_ADON;
-  sdadc3_adon = SDADC3->CR2 & SDADC_CR2_ADON;
-
-  SDADC1->CR2 &= ~SDADC_CR2_ADON;
-  SDADC2->CR2 &= ~SDADC_CR2_ADON;
-  SDADC3->CR2 &= ~SDADC_CR2_ADON;
-
-  /* Get SDADC1_CR1 register value */
-  tmpcr1 = SDADC1->CR1;
-
-  /* Clear the SDADC1_CR1_REFV bits */
-  tmpcr1 &= (uint32_t) (~SDADC_CR1_REFV);
-
-  /* Select the external reference voltage */
-  tmpcr1 |= svs;
-
-  /* Write in SDADC_CR1 */
-  SDADC1->CR1 = tmpcr1;
-
-  /* Insert delay equal to ~10 ms (4 ms required) */
-  chThdSleepMilliseconds(5);
-
-  SDADC1->CR2 |= sdadc1_adon;
-  SDADC2->CR2 |= sdadc2_adon;
-  SDADC3->CR2 |= sdadc3_adon;
-}
-
-/**
- * @brief   Sets the Sigma-Delta ADC Converter into initialization mode
- * @details The sdadc is either put into init mode or exits init mode.
- * @note    This is an STM32-only functionality.
- * @note    This function is meant to be called after @p adcStart().
- * @param[in] adcdp      pointer to the @p ADCDriver object
- * @param[in] enable    true means init mode, false means exit init mode
- *
- */
-void sdadcSTM32SetInitializationMode(ADCDriver* adcdp, bool_t enterInitMode)
-{
-  uint32_t SDADCTimeout = 300000;
-
-  if ((adcdp == &SDADCD1) ||
-      (adcdp == &SDADCD2) || 
-      (adcdp == &SDADCD3)) {
-
-    if (enterInitMode) {
-      adcdp->sdadc->CR1 |= SDADC_CR1_INIT;
-
-      /* wait for INITRDY flag to be set */
-      while (((adcdp->sdadc->ISR & SDADC_ISR_INITRDY) == 0) && 
-	     (--SDADCTimeout != 0));
-
-      if (SDADCTimeout == 0)
-      {
-	/* INITRDY flag can not set */
-	port_halt();
-      }
-    }
-    else {
-      adcdp->sdadc->CR1 &= ~SDADC_CR1_INIT;
-    }
-  }
-}
-
-/**
-  * @brief  Configures the calibration sequence.
-  * @note   TODO - UPDATE
-  * @param  ADCDriver*  one of &SDADCD1, &SDADCD2, &SDADCD3
-  * @param  SDADC_CalibrationSequence: Number of calibration sequence to be performed.
-  *          This parameter can be one of the following values:
-  *            @arg SDADC_CalibrationSequence_1: One calibration sequence will be performed
-  *                                      to calculate OFFSET0[11:0] (offset that corresponds to conf0)
-  *            @arg SDADC_CalibrationSequence_2: Two calibration sequences will be performed
-  *                                      to calculate OFFSET0[11:0] and OFFSET1[11:0]
-  *                                      (offsets that correspond to conf0 and conf1)
-  *            @arg SDADC_CalibrationSequence_3: Three calibration sequences will be performed
-  *                                      to calculate OFFSET0[11:0], OFFSET1[11:0], 
-  *                                      and OFFSET2[11:0] (offsets that correspond to conf0, conf1 and conf2)
-  * @retval None
-  */
-void sdadcSTM32Calibrate(ADCDriver* adcdp, 
-			 SDADC_NUM_CALIB_SEQ numCalibSequences,
-			 ADCConversionGroup* grpp)
-{
-  uint32_t SDADCTimeout = 0;
-  uint32_t tmpcr2 = 0;
-
-  if (!(adcdp == &SDADCD1 ||
-	adcdp == &SDADCD2 || 
-	adcdp == &SDADCD3))
-      return;
-
-  sdadcSTM32SetInitializationMode(adcdp, true);
-
-  /* SDADC setup.*/
-  adcdp->sdadc->CR2      = grpp->ll.sdadc.cr2;
-  adcdp->sdadc->CONF0R   = grpp->ll.sdadc.conf0r;
-  adcdp->sdadc->CONF1R   = grpp->ll.sdadc.conf1r;
-  adcdp->sdadc->CONF2R   = grpp->ll.sdadc.conf2r;
-  adcdp->sdadc->CONFCHR1 = grpp->ll.sdadc.confchr1;
-  adcdp->sdadc->CONFCHR2 = grpp->ll.sdadc.confchr2;
-
-  sdadcSTM32SetInitializationMode(adcdp, false);
-
-  /* configure calibration to be performed on conf0 */
-  /* Get SDADC_CR2 register value */
-  tmpcr2 = adcdp->sdadc->CR2;
-
-  /* Clear the SDADC_CR2_CALIBCNT bits */
-  tmpcr2 &= (uint32_t) (~SDADC_CR2_CALIBCNT);
-  /* Set the calibration sequence */
-  tmpcr2 |= numCalibSequences;
-
-  /* 
-     Write in SDADC_CR2 and
-     start calibration 
-  */
-  adcdp->sdadc->CR2 = tmpcr2 | SDADC_CR2_STARTCALIB;
- 
-  /* Set calibration timeout: 5.12 ms at 6 MHz in a single calibration sequence */
-  SDADCTimeout = SDADC_CAL_TIMEOUT;
-
-  /* wait for SDADC Calibration process to end */
-  while (((adcdp->sdadc->ISR & SDADC_ISR_EOCALF) == 0) && (--SDADCTimeout != 0));
-
-  if(SDADCTimeout == 0)
-  {
-    /* Calib timeout */
-    port_halt();
-    return;
-  }
-
-  /* cleanup by clearing EOCALF flag */
-  adcdp->sdadc->CLRISR |= SDADC_ISR_CLREOCALF;
-}
-
-static bool_t isADCDriverForSigmaDeltaADC(ADCDriver *adcdp) {
-  return (adcdp->sdadc != NULL);
-}
-
-static bool_t isADCDriverForSuccApproxADC(ADCDriver *adcdp) {
-  return (adcdp->adc != NULL);
-}
+#endif /* STM32_ADC_USE_ADC */
 
 #endif /* HAL_USE_ADC */
 

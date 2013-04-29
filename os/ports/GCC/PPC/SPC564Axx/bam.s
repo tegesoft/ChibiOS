@@ -19,8 +19,8 @@
 */
 
 /**
- * @file    SPC563Axx/bam.s
- * @brief   SPC563Axx boot assistant record.
+ * @file    SPC564Axx/bam.s
+ * @brief   SPC564Axx boot assistant record.
  *
  * @addtogroup PPC_CORE
  * @{
@@ -35,9 +35,12 @@
 #else
         .long       0x005A0000
 #endif
-        .long       .init
+        .long       _reset_address
 
-.init:
+        .align      2
+        .globl      _reset_address
+        .type       _reset_address, @function
+_reset_address:
         bl          _coreinit
         bl          _ivinit
 

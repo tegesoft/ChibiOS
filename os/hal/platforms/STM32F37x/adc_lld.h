@@ -1,21 +1,17 @@
 /*
-    ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012,2013 Giovanni Di Sirio.
+    ChibiOS/RT - Copyright (C) 2006-2013 Giovanni Di Sirio
 
-    This file is part of ChibiOS/RT.
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-    ChibiOS/RT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+        http://www.apache.org/licenses/LICENSE-2.0
 
-    ChibiOS/RT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
 
 /**
@@ -156,14 +152,6 @@
 #endif
 
 /**
- * @brief   SDADC slow mode switch.
- * @details If set to @p TRUE all SDADCs operate in slow mode.
- */
-#if !defined(STM32_ADC_SDADC_SLOW_MODE) || defined(__DOXYGEN__)
-#define STM32_ADC_SDADC_SLOW_MODE           FALSE
-#endif
-
-/**
  * @brief   ADC1 DMA priority (0..3|lowest..highest).
  */
 #if !defined(STM32_ADC_ADC1_DMA_PRIORITY) || defined(__DOXYGEN__)
@@ -252,6 +240,18 @@
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
 
+/**
+ * @brief   At least an ADC unit is in use.
+ */
+#define STM32_ADC_USE_ADC   STM32_ADC_USE_ADC1
+
+/**
+ * @brief   At least an SDADC unit is in use.
+ */
+#define STM32_ADC_USE_SDADC (STM32_ADC_USE_SDADC1 ||                        \
+                             STM32_ADC_USE_SDADC2 ||                        \
+                             STM32_ADC_USE_SDADC3)
+
 #if STM32_ADC_USE_ADC1 && !STM32_HAS_ADC1
 #error "ADC1 not present in the selected device"
 #endif
@@ -268,8 +268,7 @@
 #error "SDADC3 not present in the selected device"
 #endif
 
-#if !STM32_ADC_USE_ADC1 && !STM32_ADC_USE_SDADC1 &&                         \
-    !STM32_ADC_USE_SDADC2 && !STM32_ADC_USE_SDADC3
+#if !STM32_ADC_USE_ADC && !STM32_ADC_USE_SDADC
 #error "ADC driver activated but no ADC/SDADC peripheral assigned"
 #endif
 
@@ -358,7 +357,8 @@ typedef uint16_t adc_channels_num_t;
  */
 typedef enum {
   ADC_ERR_DMAFAILURE = 0,                   /**< DMA operations failure.    */
-  ADC_ERR_OVERFLOW = 1                      /**< ADC overflow condition.    */
+  ADC_ERR_OVERFLOW = 1,                     /**< ADC overflow condition.    */
+  ADC_ERR_AWD1 = 2                          /**< Watchdog 1 triggered.      */
 } adcerror_t;
 
 /**
@@ -419,6 +419,7 @@ typedef struct {
    *         is not NULL, then use the sdadc struct.
    */
   union { 
+#if STM32_ADC_USE_ADC || defined(__DOXYGEN__)
     struct {
       /**
        * @brief   ADC CR1 register initialization data.
@@ -434,39 +435,29 @@ typedef struct {
        */
       uint32_t                  cr2;
       /**
-       * @brief   ADC SMPR1 register initialization data.
-       * @details In this field must be specified the sample times for channels
-       *          10...18.
+       * @brief   ADC LTR register initialization data.
        */
-      uint32_t                  smpr1;
+      uint32_t                  ltr;
       /**
-       * @brief   ADC SMPR2 register initialization data.
-       * @details In this field must be specified the sample times for channels
-       *          0...9.
+       * @brief   ADC HTR register initialization data.
        */
-      uint32_t                  smpr2;
+      uint32_t                  htr;
       /**
-       * @brief   ADC SQR1 register initialization data.
-       * @details Conversion group sequence 13...16 + sequence length.
+       * @brief   ADC SMPRx registers initialization data.
        */
-      uint32_t                  sqr1;
+      uint32_t                  smpr[2];
       /**
-       * @brief   ADC SQR2 register initialization data.
-       * @details Conversion group sequence 7...12.
+       * @brief   ADC SQRx register initialization data.
        */
-      uint32_t                  sqr2;
-      /**
-       * @brief   ADC SQR3 register initialization data.
-       * @details Conversion group sequence 1...6.
-       */
-      uint32_t                  sqr3;
+      uint32_t                  sqr[3];
     } adc;
+#endif /* STM32_ADC_USE_ADC */
+#if STM32_ADC_USE_SDADC || defined(__DOXYGEN__)
     struct {
       /**
        * @brief   SDADC CR2 register initialization data.
-       * @note    All the required bits must be defined into this field except
-       *          @p ADC_CR2_DMA, @p ADC_CR2_CONT and @p ADC_CR2_ADON that are
-       *          enforced inside the driver.
+       * @note    Only the @p SDADC_CR2_JSWSTART, @p SDADC_CR2_JEXTSEL
+       *          and @p SDADC_CR2_JEXTEN can be specified in this field.
        */
       uint32_t                  cr2;
       /**
@@ -474,26 +465,11 @@ typedef struct {
        */
       uint32_t                  jchgr;
       /**
-       * @brief   SDADC CONF0R register initialization data.
+       * @brief   SDADC CONFCHxR registers initialization data.
        */
-      uint32_t                  conf0r;
-      /**
-       * @brief   SDADC CONF1R register initialization data.
-       */
-      uint32_t                  conf1r;
-      /**
-       * @brief   SDADC CONF2R register initialization data.
-       */
-      uint32_t                  conf2r;
-      /**
-       * @brief   SDADC CONFCH1R register initialization data.
-       */
-      uint32_t                  confchr1;
-      /**
-       * @brief   SDADC CONFCH2R register initialization data.
-       */
-      uint32_t                  confchr2;
+      uint32_t                  confchr[2];
     } sdadc;
+#endif /* STM32_ADC_USE_SDADC */
   } u;
 } ADCConversionGroup;
 
@@ -502,10 +478,18 @@ typedef struct {
  * @note    It could be empty on some architectures.
  */
 typedef struct {
+#if STM32_ADC_USE_SDADC
   /**
    * @brief   SDADC CR1 register initialization data.
    */
   uint32_t                  cr1;
+  /**
+   * @brief   SDADC CONFxR registers initialization data.
+   */
+  uint32_t                  confxr[3];
+#else /* !STM32_ADC_USE_SDADC */
+  uint32_t                  dummy;
+#endif /* !STM32_ADC_USE_SDADC */
 } ADCConfig;
 
 /**
@@ -553,15 +537,18 @@ struct ADCDriver {
   ADC_DRIVER_EXT_FIELDS
 #endif
   /* End of the mandatory fields.*/
+#if STM32_ADC_USE_ADC || defined(__DOXYGEN__)
   /**
    * @brief   Pointer to the ADCx registers block.
    */
   ADC_TypeDef               *adc;
-
+#endif
+#if STM32_ADC_USE_SDADC || defined(__DOXYGEN__)
   /**
    * @brief   Pointer to the SDADCx registers block.
    */
   SDADC_TypeDef             *sdadc;
+#endif
   /**
    * @brief   Pointer to associated DMA channel.
    */
@@ -577,20 +564,17 @@ struct ADCDriver {
 /*===========================================================================*/
 
 /**
- * @name    Sequences building helper macros
+ * @name    Sequences building helper macros for ADC
  * @{
  */
 /**
  * @brief   Number of channels in a conversion sequence.
  */
 #define ADC_SQR1_NUM_CH(n)      (((n) - 1) << 20)
-
-#define ADC_SQR3_SQ1_N(n)       ((n) << 0)  /**< @brief 1st channel in seq. */
-#define ADC_SQR3_SQ2_N(n)       ((n) << 5)  /**< @brief 2nd channel in seq. */
-#define ADC_SQR3_SQ3_N(n)       ((n) << 10) /**< @brief 3rd channel in seq. */
-#define ADC_SQR3_SQ4_N(n)       ((n) << 15) /**< @brief 4th channel in seq. */
-#define ADC_SQR3_SQ5_N(n)       ((n) << 20) /**< @brief 5th channel in seq. */
-#define ADC_SQR3_SQ6_N(n)       ((n) << 25) /**< @brief 6th channel in seq. */
+#define ADC_SQR1_SQ13_N(n)      ((n) << 0)  /**< @brief 13th channel in seq.*/
+#define ADC_SQR1_SQ14_N(n)      ((n) << 5)  /**< @brief 14th channel in seq.*/
+#define ADC_SQR1_SQ15_N(n)      ((n) << 10) /**< @brief 15th channel in seq.*/
+#define ADC_SQR1_SQ16_N(n)      ((n) << 15) /**< @brief 16th channel in seq.*/
 
 #define ADC_SQR2_SQ7_N(n)       ((n) << 0)  /**< @brief 7th channel in seq. */
 #define ADC_SQR2_SQ8_N(n)       ((n) << 5)  /**< @brief 8th channel in seq. */
@@ -599,10 +583,12 @@ struct ADCDriver {
 #define ADC_SQR2_SQ11_N(n)      ((n) << 20) /**< @brief 11th channel in seq.*/
 #define ADC_SQR2_SQ12_N(n)      ((n) << 25) /**< @brief 12th channel in seq.*/
 
-#define ADC_SQR1_SQ13_N(n)      ((n) << 0)  /**< @brief 13th channel in seq.*/
-#define ADC_SQR1_SQ14_N(n)      ((n) << 5)  /**< @brief 14th channel in seq.*/
-#define ADC_SQR1_SQ15_N(n)      ((n) << 10) /**< @brief 15th channel in seq.*/
-#define ADC_SQR1_SQ16_N(n)      ((n) << 15) /**< @brief 16th channel in seq.*/
+#define ADC_SQR3_SQ1_N(n)       ((n) << 0)  /**< @brief 1st channel in seq. */
+#define ADC_SQR3_SQ2_N(n)       ((n) << 5)  /**< @brief 2nd channel in seq. */
+#define ADC_SQR3_SQ3_N(n)       ((n) << 10) /**< @brief 3rd channel in seq. */
+#define ADC_SQR3_SQ4_N(n)       ((n) << 15) /**< @brief 4th channel in seq. */
+#define ADC_SQR3_SQ5_N(n)       ((n) << 20) /**< @brief 5th channel in seq. */
+#define ADC_SQR3_SQ6_N(n)       ((n) << 25) /**< @brief 6th channel in seq. */
 /** @} */
 
 /**
@@ -634,16 +620,50 @@ struct ADCDriver {
 /** @} */
 
 /**
- * @name    Channel config settings helper macros
+ * @name    Sequences building helper macros for SDADC
  * @{
  */
-#define  sdadcSTM32Channel1TO7Config(SDADC_Channel, SDADC_Conf) ((uint32_t) (SDADC_Conf << (( SDADC_Channel >> 16) << 2)))
-#define  sdadcSTM32Channel8Config(SDADC_Channel, SDADC_Conf) ((uint32_t) SDADC_CONF)
-
-#define  sdadcSTM32ChannelSelect(SDADC_Channel) ((uint32_t) (SDADC_Channel & 0xffff0000))
-
+#define SDADC_JCHGR_CH(n)           (1U << (n))
 /** @} */
 
+/**
+ * @name    Channel configuration number helper macros for SDADC
+ * @{
+ */
+#define SDADC_CONFCHR1_CH0(n)       ((n) << 0)
+#define SDADC_CONFCHR1_CH1(n)       ((n) << 4)
+#define SDADC_CONFCHR1_CH2(n)       ((n) << 8)
+#define SDADC_CONFCHR1_CH3(n)       ((n) << 12)
+#define SDADC_CONFCHR1_CH4(n)       ((n) << 16)
+#define SDADC_CONFCHR1_CH5(n)       ((n) << 20)
+#define SDADC_CONFCHR1_CH6(n)       ((n) << 24)
+#define SDADC_CONFCHR1_CH7(n)       ((n) << 28)
+#define SDADC_CONFCHR2_CH8(n)       ((n) << 0)
+/** @} */
+
+/**
+ * @name    Configuration registers helper macros for SDADC
+ * @{
+ */
+#define SDADC_CONFR_OFFSET_MASK     (0xFFFU << 0)
+#define SDADC_CONFR_OFFSET(n)       ((n) << 0)
+#define SDADC_CONFR_GAIN_MASK       (7U << 20)
+#define SDADC_CONFR_GAIN_1X         (0U << 20)
+#define SDADC_CONFR_GAIN_2X         (1U << 20)
+#define SDADC_CONFR_GAIN_4X         (2U << 20)
+#define SDADC_CONFR_GAIN_8X         (3U << 20)
+#define SDADC_CONFR_GAIN_16X        (4U << 20)
+#define SDADC_CONFR_GAIN_32X        (5U << 20)
+#define SDADC_CONFR_GAIN_0P5X       (7U << 20)
+#define SDADC_CONFR_SE_MASK         (3U << 26)
+#define SDADC_CONFR_SE_DIFF         (0U << 26)
+#define SDADC_CONFR_SE_OFFSET       (1U << 26)
+#define SDADC_CONFR_SE_ZERO_VOLT    (3U << 26)
+#define SDADC_CONFR_COMMON_MASK     (3U << 30)
+#define SDADC_CONFR_COMMON_VSSSD    (0U << 30)
+#define SDADC_CONFR_COMMON_VDDSD2   (1U << 30)
+#define SDADC_CONFR_COMMON_VDDSD    (2U << 30)
+/** @} */
 
 /*===========================================================================*/
 /* External declarations.                                                    */
@@ -673,14 +693,13 @@ extern "C" {
   void adc_lld_stop(ADCDriver *adcp);
   void adc_lld_start_conversion(ADCDriver *adcp);
   void adc_lld_stop_conversion(ADCDriver *adcp);
+  void adcSTM32Calibrate(ADCDriver *adcdp);
+#if STM32_ADC_USE_ADC
   void adcSTM32EnableTSVREFE(void);
   void adcSTM32DisableTSVREFE(void);
   void adcSTM32EnableVBATE(void);
   void adcSTM32DisableVBATE(void);
-  void sdadcSTM32SetInitializationMode(ADCDriver* adcdp, bool_t enterInitMode);
-  void sdadcSTM32VREFSelect(SDADC_VREF_SEL svs);
-  void sdadcSTM32Calibrate(ADCDriver* adcdp, SDADC_NUM_CALIB_SEQ numCalibSequences,
-			 ADCConversionGroup* grpp);
+#endif /* STM32_ADC_USE_ADC */
 #ifdef __cplusplus
 }
 #endif

@@ -1,21 +1,17 @@
 /*
-    ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012,2013 Giovanni Di Sirio.
+    ChibiOS/RT - Copyright (C) 2006-2013 Giovanni Di Sirio
 
-    This file is part of ChibiOS/RT.
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-    ChibiOS/RT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+        http://www.apache.org/licenses/LICENSE-2.0
 
-    ChibiOS/RT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
 /*
    Concepts and parts of this file have been contributed by Uladzimir Pylinsky
@@ -39,6 +35,11 @@
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
 
+#define DMAMODE_COMMON                                                      \
+  (STM32_DMA_CR_PSIZE_BYTE | STM32_DMA_CR_MSIZE_BYTE |                      \
+   STM32_DMA_CR_MINC       | STM32_DMA_CR_DMEIE      |                      \
+   STM32_DMA_CR_TEIE       | STM32_DMA_CR_TCIE)
+
 #define I2C1_RX_DMA_CHANNEL                                                 \
   STM32_DMA_GETCHANNEL(STM32_I2C_I2C1_RX_DMA_STREAM,                        \
                        STM32_I2C1_RX_DMA_CHN)
@@ -60,13 +61,15 @@
 /*===========================================================================*/
 
 #define I2C_MASTER_TC                                                       \
-  ((uint32_t)(I2C_ISR_BUSY|I2C_ISR_TC))
+  ((uint32_t)(I2C_ISR_BUSY | I2C_ISR_TC))
+
 #define I2C_ERROR_MASK                                                      \
-  ((uint32_t)(I2C_ISR_BERR|I2C_ISR_ARLO|I2C_ISR_OVR|I2C_ISR_PECERR|         \
-    I2C_ISR_TIMEOUT|I2C_ISR_ALERT))
+  ((uint32_t)(I2C_ISR_BERR | I2C_ISR_ARLO | I2C_ISR_OVR | I2C_ISR_PECERR |  \
+              I2C_ISR_TIMEOUT | I2C_ISR_ALERT))
+
 #define I2C_INT_MASK                                                        \
-  ((uint32_t)(I2C_ISR_TCR|I2C_ISR_TC|I2C_ISR_STOPF|I2C_ISR_NACKF|           \
-    I2C_ISR_ADDR|I2C_ISR_RXNE|I2C_ISR_TXIS))
+  ((uint32_t)(I2C_ISR_TCR | I2C_ISR_TC | I2C_ISR_STOPF | I2C_ISR_NACKF |    \
+              I2C_ISR_ADDR | I2C_ISR_RXNE | I2C_ISR_TXIS))
 
 /*===========================================================================*/
 /* Driver exported variables.                                                */
@@ -157,27 +160,53 @@ static void i2c_lld_safety_timeout(void *p) {
  * @brief   I2C shared ISR code.
  *
  * @param[in] i2cp      pointer to the @p I2CDriver object
+ * @param[in] isr       content of the ISR register to be decoded
  *
  * @notapi
  */
-static void i2c_lld_serve_interrupt(I2CDriver *i2cp, uint32_t status) {
+static void i2c_lld_serve_interrupt(I2CDriver *i2cp, uint32_t isr) {
   I2C_TypeDef *dp = i2cp->i2c;
 
-  if (status & I2C_MASTER_TC) {
-    uint8_t rxbytes = dmaStreamGetTransactionSize(i2cp->dmarx);
+  if ((isr & I2C_ISR_TC) && (i2cp->state == I2C_ACTIVE_TX)) {
+    size_t rxbytes;
+
+    /* Make sure no more 'Transfer complete' interrupts.*/
+    dp->CR1 &= ~I2C_CR1_TCIE;
+
+    rxbytes = dmaStreamGetTransactionSize(i2cp->dmarx);
     if (rxbytes > 0) {
+      i2cp->state = I2C_ACTIVE_RX;
+
       /* Enable RX DMA */
       dmaStreamEnable(i2cp->dmarx);
 
       dp->CR2 &= ~I2C_CR2_NBYTES;
-      dp->CR2 |= (uint8_t)rxbytes << 16;
+      dp->CR2 |= rxbytes << 16;
 
       /* Starts the read operation.*/
       dp->CR2 |= I2C_CR2_RD_WRN;
       dp->CR2 |= I2C_CR2_START;
     }
     else {
+      /* Nothing to receive - send STOP immediately.*/
       dp->CR2 |= I2C_CR2_STOP;
+    }
+  }
+  if (isr & I2C_ISR_NACKF) {
+    /* Starts a STOP sequence immediately on error.*/
+    dp->CR2 |= I2C_CR2_STOP;
+
+    i2cp->errors |= I2CD_ACK_FAILURE;
+  }
+  if (isr & I2C_ISR_STOPF) {
+    /* Stops the associated DMA streams.*/
+    dmaStreamDisable(i2cp->dmatx);
+    dmaStreamDisable(i2cp->dmarx);
+
+    if (i2cp->errors) {
+      wakeup_isr(i2cp, RDY_RESET);
+    }
+    else {
       wakeup_isr(i2cp, RDY_OK);
     }
   }
@@ -216,6 +245,7 @@ static void i2c_lld_serve_rx_end_irq(I2CDriver *i2cp, uint32_t flags) {
  * @notapi
  */
 static void i2c_lld_serve_tx_end_irq(I2CDriver *i2cp, uint32_t flags) {
+
   /* DMA errors handling.*/
 #if defined(STM32_I2C_DMA_ERROR_HOOK)
   if ((flags & (STM32_DMA_ISR_TEIF | STM32_DMA_ISR_DMEIF)) != 0) {
@@ -232,50 +262,31 @@ static void i2c_lld_serve_tx_end_irq(I2CDriver *i2cp, uint32_t flags) {
  * @brief   I2C error handler.
  *
  * @param[in] i2cp      pointer to the @p I2CDriver object
+ * @param[in] isr       content of the ISR register to be decoded
  *
  * @notapi
  */
-static void i2c_lld_serve_error_interrupt(I2CDriver *i2cp, uint32_t status) {
-  i2cflags_t errors;
+static void i2c_lld_serve_error_interrupt(I2CDriver *i2cp, uint32_t isr) {
 
   /* Clears interrupt flags just to be safe.*/
-  chSysLockFromIsr();
   dmaStreamDisable(i2cp->dmatx);
   dmaStreamDisable(i2cp->dmarx);
-  chSysUnlockFromIsr();
 
-  errors = I2CD_NO_ERROR;
+  if (isr & I2C_ISR_BERR)
+    i2cp->errors |= I2CD_BUS_ERROR;
 
-  if (status & I2C_ISR_BERR) {                     /* Bus error.           */
-    status &= ~I2C_ISR_BERR;
-    errors |= I2CD_BUS_ERROR;
-  }
-  if (status & I2C_ISR_ARLO) {                     /* Arbitration lost.    */
-    status &= ~I2C_ISR_ARLO;
-    errors |= I2CD_ARBITRATION_LOST;
-  }
-  if (status & I2C_ISR_OVR) {                      /* Overrun.             */
-    status &= ~I2C_ISR_OVR;
-    errors |= I2CD_OVERRUN;
-  }
-  if (status & I2C_ISR_PECERR) {                   /* PEC error.           */
-    status &= ~I2C_ISR_PECERR;
-    errors |= I2CD_PEC_ERROR;
-  }
-  if (status & I2C_ISR_TIMEOUT) {                  /* SMBus Timeout.       */
-    status &= ~I2C_ISR_TIMEOUT;
-    errors |= I2CD_TIMEOUT;
-  }
-  if (status & I2C_ISR_ALERT) {                    /* SMBus alert.         */
-    status &= ~I2C_ISR_ALERT;
-    errors |= I2CD_SMB_ALERT;
-  }
+  if (isr & I2C_ISR_ARLO)
+    i2cp->errors |= I2CD_ARBITRATION_LOST;
+
+  if (isr & I2C_ISR_OVR)
+    i2cp->errors |= I2CD_OVERRUN;
+
+  if (isr & I2C_ISR_TIMEOUT)
+    i2cp->errors |= I2CD_TIMEOUT;
 
   /* If some error has been identified then sends wakes the waiting thread.*/
-  if (errors != I2CD_NO_ERROR) {
-    i2cp->errors = errors;
+  if (i2cp->errors != I2CD_NO_ERROR)
     wakeup_isr(i2cp, RDY_RESET);
-  }
 }
 
 /*===========================================================================*/
@@ -283,45 +294,113 @@ static void i2c_lld_serve_error_interrupt(I2CDriver *i2cp, uint32_t status) {
 /*===========================================================================*/
 
 #if STM32_I2C_USE_I2C1 || defined(__DOXYGEN__)
+#if defined(STM32_I2C1_GLOBAL_HANDLER) || defined(__DOXYGEN__)
 /**
  * @brief   I2C1 event interrupt handler.
  *
  * @notapi
  */
-CH_IRQ_HANDLER(I2C1_IRQHandler) {
-  volatile I2C_TypeDef *dp = I2CD1.i2c;
-  uint32_t status = dp->ISR;
+CH_IRQ_HANDLER(STM32_I2C1_GLOBAL_HANDLER) {
+  uint32_t isr = I2CD1.i2c->ISR;
 
   CH_IRQ_PROLOGUE();
 
-  if (status & I2C_ERROR_MASK)
-    i2c_lld_serve_error_interrupt(&I2CD1, status);
-  else if (status & I2C_INT_MASK)
-    i2c_lld_serve_interrupt(&I2CD1, status);
+  /* Clearing IRQ bits.*/
+  I2CD1.i2c->ICR = isr;
+
+  if (isr & I2C_ERROR_MASK)
+    i2c_lld_serve_error_interrupt(&I2CD1, isr);
+  else if (isr & I2C_INT_MASK)
+    i2c_lld_serve_interrupt(&I2CD1, isr);
 
   CH_IRQ_EPILOGUE();
 }
+
+#elif defined(STM32_I2C1_EVENT_HANDLER) && defined(STM32_I2C1_ERROR_HANDLER)
+CH_IRQ_HANDLER(STM32_I2C1_EVENT_HANDLER) {
+  uint32_t isr = I2CD1.i2c->ISR;
+
+  CH_IRQ_PROLOGUE();
+
+  /* Clearing IRQ bits.*/
+  I2CD1.i2c->ICR = isr & I2C_INT_MASK;
+
+  i2c_lld_serve_interrupt(&I2CD1, isr);
+
+  CH_IRQ_EPILOGUE();
+}
+
+CH_IRQ_HANDLER(STM32_I2C1_ERROR_HANDLER) {
+  uint32_t isr = I2CD1.i2c->ISR;
+
+  CH_IRQ_PROLOGUE();
+
+  /* Clearing IRQ bits.*/
+  I2CD1.i2c->ICR = isr & I2C_ERROR_MASK;
+
+  i2c_lld_serve_error_interrupt(&I2CD1, isr);
+
+  CH_IRQ_EPILOGUE();
+}
+
+#else
+#error "I2C1 interrupt handlers not defined"
+#endif
 #endif /* STM32_I2C_USE_I2C1 */
 
 #if STM32_I2C_USE_I2C2 || defined(__DOXYGEN__)
+#if defined(STM32_I2C2_GLOBAL_HANDLER) || defined(__DOXYGEN__)
 /**
  * @brief   I2C2 event interrupt handler.
  *
  * @notapi
  */
-CH_IRQ_HANDLER(I2C2_IRQHandler) {
-  volatile I2C_TypeDef *dp = I2CD2.i2c;
-  uint32_t status = dp->ISR;
+CH_IRQ_HANDLER(STM32_I2C2_GLOBAL_HANDLER) {
+  uint32_t isr = I2CD2.i2c->ISR;
 
   CH_IRQ_PROLOGUE();
 
-  if (status & I2C_ERROR_MASK)
-    i2c_lld_serve_error_interrupt(&I2CD2, status);
-  else if (status & I2C_INT_MASK)
-    i2c_lld_serve_interrupt(&I2CD2, status);
+  /* Clearing IRQ bits.*/
+  I2CD2.i2c->ICR = isr;
+
+  if (isr & I2C_ERROR_MASK)
+    i2c_lld_serve_error_interrupt(&I2CD2, isr);
+  else if (isr & I2C_INT_MASK)
+    i2c_lld_serve_interrupt(&I2CD2, isr);
 
   CH_IRQ_EPILOGUE();
 }
+
+#elif defined(STM32_I2C2_EVENT_HANDLER) && defined(STM32_I2C2_ERROR_HANDLER)
+CH_IRQ_HANDLER(STM32_I2C2_EVENT_HANDLER) {
+  uint32_t isr = I2CD2.i2c->ISR;
+
+  CH_IRQ_PROLOGUE();
+
+  /* Clearing IRQ bits.*/
+  I2CD2.i2c->ICR = isr & I2C_INT_MASK;
+
+  i2c_lld_serve_interrupt(&I2CD2, isr);
+
+  CH_IRQ_EPILOGUE();
+}
+
+CH_IRQ_HANDLER(STM32_I2C2_ERROR_HANDLER) {
+  uint32_t isr = I2CD2.i2c->ISR;
+
+  CH_IRQ_PROLOGUE();
+
+  /* Clearing IRQ bits.*/
+  I2CD2.i2c->ICR = isr & I2C_ERROR_MASK;
+
+  i2c_lld_serve_error_interrupt(&I2CD2, isr);
+
+  CH_IRQ_EPILOGUE();
+}
+
+#else
+#error "I2C2 interrupt handlers not defined"
+#endif
 #endif /* STM32_I2C_USE_I2C2 */
 
 /*===========================================================================*/
@@ -362,9 +441,8 @@ void i2c_lld_init(void) {
 void i2c_lld_start(I2CDriver *i2cp) {
   I2C_TypeDef *dp = i2cp->i2c;
 
-  i2cp->dmamode = STM32_DMA_CR_PSIZE_BYTE | STM32_DMA_CR_MSIZE_BYTE |
-                  STM32_DMA_CR_MINC | STM32_DMA_CR_DMEIE | STM32_DMA_CR_TEIE |
-                  STM32_DMA_CR_TCIE;
+  i2cp->txdmamode = DMAMODE_COMMON | STM32_DMA_CR_DIR_M2P;
+  i2cp->rxdmamode = DMAMODE_COMMON | STM32_DMA_CR_DIR_P2M;
 
   /* Make sure I2C peripheral is disabled */
   dp->CR1 &= ~I2C_CR1_PE;
@@ -388,11 +466,23 @@ void i2c_lld_start(I2CDriver *i2cp) {
                             (void *)i2cp);
       chDbgAssert(!b, "i2c_lld_start(), #2", "stream already allocated");
       rccEnableI2C1(FALSE);
-      nvicEnableVector(I2C1_IRQn,
-          CORTEX_PRIORITY_MASK(STM32_I2C_I2C1_IRQ_PRIORITY));
 
-      i2cp->dmamode |= STM32_DMA_CR_CHSEL(I2C1_RX_DMA_CHANNEL) |
-                       STM32_DMA_CR_PL(STM32_I2C_I2C1_DMA_PRIORITY);
+#if defined(STM32_I2C1_GLOBAL_NUMBER) || defined(__DOXYGEN__)
+      nvicEnableVector(STM32_I2C1_GLOBAL_NUMBER,
+                       CORTEX_PRIORITY_MASK(STM32_I2C_I2C1_IRQ_PRIORITY));
+#elif defined(STM32_I2C1_EVENT_NUMBER) && defined(STM32_I2C1_ERROR_NUMBER)
+      nvicEnableVector(STM32_I2C1_EVENT_NUMBER,
+                       CORTEX_PRIORITY_MASK(STM32_I2C_I2C1_IRQ_PRIORITY));
+      nvicEnableVector(STM32_I2C1_ERROR_NUMBER,
+                       CORTEX_PRIORITY_MASK(STM32_I2C_I2C1_IRQ_PRIORITY));
+#else
+#error "I2C1 interrupt numbers not defined"
+#endif
+
+      i2cp->rxdmamode |= STM32_DMA_CR_CHSEL(I2C1_RX_DMA_CHANNEL) |
+                         STM32_DMA_CR_PL(STM32_I2C_I2C1_DMA_PRIORITY);
+      i2cp->txdmamode |= STM32_DMA_CR_CHSEL(I2C1_TX_DMA_CHANNEL) |
+                         STM32_DMA_CR_PL(STM32_I2C_I2C1_DMA_PRIORITY);
     }
 #endif /* STM32_I2C_USE_I2C1 */
 
@@ -412,32 +502,40 @@ void i2c_lld_start(I2CDriver *i2cp) {
                             (void *)i2cp);
       chDbgAssert(!b, "i2c_lld_start(), #4", "stream already allocated");
       rccEnableI2C2(FALSE);
-      nvicEnableVector(I2C2_IRQn,
-          CORTEX_PRIORITY_MASK(STM32_I2C_I2C2_IRQ_PRIORITY));
 
-      i2cp->dmamode |= STM32_DMA_CR_CHSEL(I2C2_RX_DMA_CHANNEL) |
-                       STM32_DMA_CR_PL(STM32_I2C_I2C2_DMA_PRIORITY);
+#if defined(STM32_I2C2_GLOBAL_NUMBER) || defined(__DOXYGEN__)
+      nvicEnableVector(STM32_I2C2_GLOBAL_NUMBER,
+                       CORTEX_PRIORITY_MASK(STM32_I2C_I2C2_IRQ_PRIORITY));
+#elif defined(STM32_I2C2_EVENT_NUMBER) && defined(STM32_I2C2_ERROR_NUMBER)
+      nvicEnableVector(STM32_I2C2_EVENT_NUMBER,
+                       CORTEX_PRIORITY_MASK(STM32_I2C_I2C2_IRQ_PRIORITY));
+      nvicEnableVector(STM32_I2C2_ERROR_NUMBER,
+                       CORTEX_PRIORITY_MASK(STM32_I2C_I2C2_IRQ_PRIORITY));
+#else
+#error "I2C2 interrupt numbers not defined"
+#endif
+
+      i2cp->rxdmamode |= STM32_DMA_CR_CHSEL(I2C2_RX_DMA_CHANNEL) |
+                         STM32_DMA_CR_PL(STM32_I2C_I2C2_DMA_PRIORITY);
+      i2cp->txdmamode |= STM32_DMA_CR_CHSEL(I2C2_TX_DMA_CHANNEL) |
+                         STM32_DMA_CR_PL(STM32_I2C_I2C2_DMA_PRIORITY);
     }
 #endif /* STM32_I2C_USE_I2C2 */
   }
-
-  /* DMA streams mode preparation in advance.*/
-  dmaStreamSetMode(i2cp->dmatx, i2cp->dmamode | STM32_DMA_CR_DIR_M2P);
-  dmaStreamSetMode(i2cp->dmarx, i2cp->dmamode | STM32_DMA_CR_DIR_P2M);
 
   /* I2C registers pointed by the DMA.*/
   dmaStreamSetPeripheral(i2cp->dmarx, &dp->RXDR);
   dmaStreamSetPeripheral(i2cp->dmatx, &dp->TXDR);
 
-  /* Reset i2c peripheral.*/
-  dp->CR1 = i2cp->config->cr1 | I2C_CR1_ERRIE | I2C_CR1_TCIE | I2C_CR1_TXDMAEN | I2C_CR1_RXDMAEN;
+  /* Reset i2c peripheral, the TCIE bit will be handled separately.*/
+  dp->CR1 = i2cp->config->cr1 | I2C_CR1_ERRIE | I2C_CR1_STOPIE |
+            I2C_CR1_NACKIE | I2C_CR1_TXDMAEN | I2C_CR1_RXDMAEN;
 
   /* Set slave address field (master mode) */
-  //dp->CR2 = (i2cp->config->cr2 & ~I2C_CR2_SADD) | I2C_CR2_AUTOEND;
   dp->CR2 = (i2cp->config->cr2 & ~I2C_CR2_SADD);
 
   /* Setup I2C parameters.*/
-  dp->TIMINGR = i2cp->config->clock_timing;
+  dp->TIMINGR = i2cp->config->timingr;
 
   /* Ready to go.*/
   dp->CR1 |= I2C_CR1_PE;
@@ -462,14 +560,30 @@ void i2c_lld_stop(I2CDriver *i2cp) {
 
 #if STM32_I2C_USE_I2C1
     if (&I2CD1 == i2cp) {
-      nvicDisableVector(I2C1_IRQn);
+#if defined(STM32_I2C1_GLOBAL_NUMBER) || defined(__DOXYGEN__)
+      nvicDisableVector(STM32_I2C1_GLOBAL_NUMBER);
+#elif defined(STM32_I2C1_EVENT_NUMBER) && defined(STM32_I2C1_ERROR_NUMBER)
+      nvicDisableVector(STM32_I2C1_EVENT_NUMBER);
+      nvicDisableVector(STM32_I2C1_ERROR_NUMBER);
+#else
+#error "I2C1 interrupt numbers not defined"
+#endif
+
       rccDisableI2C1(FALSE);
     }
 #endif
 
 #if STM32_I2C_USE_I2C2
     if (&I2CD2 == i2cp) {
-      nvicDisableVector(I2C2_IRQn);
+#if defined(STM32_I2C2_GLOBAL_NUMBER) || defined(__DOXYGEN__)
+      nvicDisableVector(STM32_I2C2_GLOBAL_NUMBER);
+#elif defined(STM32_I2C2_EVENT_NUMBER) && defined(STM32_I2C2_ERROR_NUMBER)
+      nvicDisableVector(STM32_I2C2_EVENT_NUMBER);
+      nvicDisableVector(STM32_I2C2_ERROR_NUMBER);
+#else
+#error "I2C2 interrupt numbers not defined"
+#endif
+
       rccDisableI2C2(FALSE);
     }
 #endif
@@ -506,9 +620,10 @@ msg_t i2c_lld_master_receive_timeout(I2CDriver *i2cp, i2caddr_t addr,
   VirtualTimer vt;
   uint32_t addr_cr2 = addr & I2C_CR2_SADD;
 
-#if defined(STM32F0XX_I2C)
-  chDbgCheck((rxbytes > 1), "i2c_lld_master_receive_timeout");
-#endif
+  chDbgCheck((rxbytes > 0), "i2c_lld_master_receive_timeout");
+
+  /* Resetting error flags for this transfer.*/
+  i2cp->errors = I2CD_NO_ERROR;
 
   /* Global timeout for the whole operation.*/
   if (timeout != TIME_INFINITE)
@@ -516,24 +631,6 @@ msg_t i2c_lld_master_receive_timeout(I2CDriver *i2cp, i2caddr_t addr,
 
   /* Releases the lock from high level driver.*/
   chSysUnlock();
-
-  /* Adjust slave address (master mode) for 7-bit address mode */
-  if ((i2cp->config->cr2 & I2C_CR2_ADD10) == 0)
-    addr_cr2 = (addr_cr2 & 0x7f) << 1;
-
-  /* Set slave address field (master mode) */
-  dp->CR2 &= ~(I2C_CR2_SADD | I2C_CR2_NBYTES);
-  dp->CR2 |= ((uint8_t)rxbytes << 16) | addr_cr2;
-
-  /* Initializes driver fields */
-  i2cp->errors = 0;
-
-  /* RX DMA setup.*/
-  dmaStreamSetMemory0(i2cp->dmarx, rxbuf);
-  dmaStreamSetTransactionSize(i2cp->dmarx, rxbytes);
-
-  /* Enable RX DMA */
-  dmaStreamEnable(i2cp->dmarx);
 
   /* Waits until BUSY flag is reset and the STOP from the previous operation
      is completed, alternatively for a timeout condition.*/
@@ -546,6 +643,25 @@ msg_t i2c_lld_master_receive_timeout(I2CDriver *i2cp, i2caddr_t addr,
 
   /* This lock will be released in high level driver.*/
   chSysLock();
+
+  /* Adjust slave address (master mode) for 7-bit address mode */
+  if ((i2cp->config->cr2 & I2C_CR2_ADD10) == 0)
+    addr_cr2 = (addr_cr2 & 0x7f) << 1;
+
+  /* Set slave address field (master mode) */
+  dp->CR2 &= ~(I2C_CR2_SADD | I2C_CR2_NBYTES);
+  dp->CR2 |= (rxbytes << 16) | addr_cr2;
+
+  /* Initializes driver fields */
+  i2cp->errors = 0;
+
+  /* RX DMA setup.*/
+  dmaStreamSetMode(i2cp->dmarx, i2cp->rxdmamode);
+  dmaStreamSetMemory0(i2cp->dmarx, rxbuf);
+  dmaStreamSetTransactionSize(i2cp->dmarx, rxbytes);
+
+  /* Enable RX DMA */
+  dmaStreamEnable(i2cp->dmarx);
 
   /* Atomic check on the timer in order to make sure that a timeout didn't
      happen outside the critical zone.*/
@@ -598,10 +714,11 @@ msg_t i2c_lld_master_transmit_timeout(I2CDriver *i2cp, i2caddr_t addr,
   VirtualTimer vt;
   uint32_t addr_cr2 = addr & I2C_CR2_SADD;
 
-#if defined(STM32F0XX_I2C)
-  chDbgCheck(((rxbytes == 0) || ((rxbytes > 1) && (rxbuf != NULL))),
+  chDbgCheck(((rxbytes == 0) || ((rxbytes > 0) && (rxbuf != NULL))),
              "i2c_lld_master_transmit_timeout");
-#endif
+
+  /* Resetting error flags for this transfer.*/
+  i2cp->errors = I2CD_NO_ERROR;
 
   /* Global timeout for the whole operation.*/
   if (timeout != TIME_INFINITE)
@@ -609,28 +726,6 @@ msg_t i2c_lld_master_transmit_timeout(I2CDriver *i2cp, i2caddr_t addr,
 
   /* Releases the lock from high level driver.*/
   chSysUnlock();
-
-  /* Adjust slave address (master mode) for 7-bit address mode */
-  if ((i2cp->config->cr2 & I2C_CR2_ADD10) == 0)
-    addr_cr2 = (addr_cr2 & 0x7f) << 1;
-
-  /* Set slave address field (master mode) */
-  dp->CR2 &= ~(I2C_CR2_SADD | I2C_CR2_NBYTES);
-  dp->CR2 |= ((uint8_t)txbytes << 16) | addr_cr2;
-
-  /* Initializes driver fields */
-  i2cp->errors = 0;
-
-  /* TX DMA setup.*/
-  dmaStreamSetMemory0(i2cp->dmatx, txbuf);
-  dmaStreamSetTransactionSize(i2cp->dmatx, txbytes);
-
-  /* RX DMA setup.*/
-  dmaStreamSetMemory0(i2cp->dmarx, rxbuf);
-  dmaStreamSetTransactionSize(i2cp->dmarx, rxbytes);
-
-  /* Enable TX DMA */
-  dmaStreamEnable(i2cp->dmatx);
 
   /* Waits until BUSY flag is reset and the STOP from the previous operation
      is completed, alternatively for a timeout condition.*/
@@ -644,12 +739,39 @@ msg_t i2c_lld_master_transmit_timeout(I2CDriver *i2cp, i2caddr_t addr,
   /* This lock will be released in high level driver.*/
   chSysLock();
 
+  /* Adjust slave address (master mode) for 7-bit address mode */
+  if ((i2cp->config->cr2 & I2C_CR2_ADD10) == 0)
+    addr_cr2 = (addr_cr2 & 0x7f) << 1;
+
+  /* Set slave address field (master mode) */
+  dp->CR2 &= ~(I2C_CR2_SADD | I2C_CR2_NBYTES);
+  dp->CR2 |= (txbytes << 16) | addr_cr2;
+
+  /* Initializes driver fields */
+  i2cp->errors = 0;
+
+  /* TX DMA setup.*/
+  dmaStreamSetMode(i2cp->dmatx, i2cp->txdmamode);
+  dmaStreamSetMemory0(i2cp->dmatx, txbuf);
+  dmaStreamSetTransactionSize(i2cp->dmatx, txbytes);
+
+  /* RX DMA setup.*/
+  dmaStreamSetMode(i2cp->dmarx, i2cp->rxdmamode);
+  dmaStreamSetMemory0(i2cp->dmarx, rxbuf);
+  dmaStreamSetTransactionSize(i2cp->dmarx, rxbytes);
+
+  /* Enable TX DMA */
+  dmaStreamEnable(i2cp->dmatx);
+
   /* Atomic check on the timer in order to make sure that a timeout didn't
      happen outside the critical zone.*/
   if ((timeout != TIME_INFINITE) && !chVTIsArmedI(&vt))
     return RDY_TIMEOUT;
 
-  /* Starts the operation.*/
+  /* Transmission complete interrupt enabled.*/
+  dp->CR1 |= I2C_CR1_TCIE;
+
+  /* Starts the operation as the very last thing.*/
   dp->CR2 &= ~I2C_CR2_RD_WRN;
   dp->CR2 |= I2C_CR2_START;
 

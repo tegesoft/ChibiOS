@@ -1,21 +1,17 @@
 /*
-    ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012,2013 Giovanni Di Sirio.
+    ChibiOS/RT - Copyright (C) 2006-2013 Giovanni Di Sirio
 
-    This file is part of ChibiOS/RT.
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-    ChibiOS/RT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+        http://www.apache.org/licenses/LICENSE-2.0
 
-    ChibiOS/RT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
 /*
    Concepts and parts of this file have been contributed by Uladzimir Pylinsky
@@ -39,6 +35,22 @@
 /* Driver constants.                                                         */
 /*===========================================================================*/
 
+/**
+ * @name    TIMINGR register definitions
+ * @{
+ */
+#define STM32_TIMINGR_PRESC_MASK        (15U << 28)
+#define STM32_TIMINGR_PRESC(n)          ((n) << 28)
+#define STM32_TIMINGR_SCLDEL_MASK       (15U << 20)
+#define STM32_TIMINGR_SCLDEL(n)         ((n) << 20)
+#define STM32_TIMINGR_SDADEL_MASK       (15U << 16)
+#define STM32_TIMINGR_SDADEL(n)         ((n) << 16)
+#define STM32_TIMINGR_SCLH_MASK         (255U << 8)
+#define STM32_TIMINGR_SCLH(n)           ((n) << 8)
+#define STM32_TIMINGR_SCLL_MASK         (255U << 0)
+#define STM32_TIMINGR_SCLL(n)           ((n) << 0)
+/** @} */
+
 /*===========================================================================*/
 /* Driver pre-compile time settings.                                         */
 /*===========================================================================*/
@@ -53,7 +65,7 @@
  * @note    The default is @p FALSE.
  */
 #if !defined(STM32_I2C_USE_I2C1) || defined(__DOXYGEN__)
-#define STM32_I2C_USE_I2C1              FALSE
+#define STM32_I2C_USE_I2C1                  FALSE
 #endif
 
 /**
@@ -62,39 +74,39 @@
  * @note    The default is @p FALSE.
  */
 #if !defined(STM32_I2C_USE_I2C2) || defined(__DOXYGEN__)
-#define STM32_I2C_USE_I2C2              FALSE
+#define STM32_I2C_USE_I2C2                  FALSE
 #endif
 
 /**
  * @brief   I2C1 interrupt priority level setting.
  */
 #if !defined(STM32_I2C_I2C1_IRQ_PRIORITY) || defined(__DOXYGEN__)
-#define STM32_I2C_I2C1_IRQ_PRIORITY     10
+#define STM32_I2C_I2C1_IRQ_PRIORITY         10
 #endif
 
 /**
  * @brief   I2C2 interrupt priority level setting.
  */
 #if !defined(STM32_I2C_I2C2_IRQ_PRIORITY) || defined(__DOXYGEN__)
-#define STM32_I2C_I2C2_IRQ_PRIORITY     10
+#define STM32_I2C_I2C2_IRQ_PRIORITY         10
 #endif
 
 /**
-* @brief   I2C1 DMA priority (0..3|lowest..highest).
-* @note    The priority level is used for both the TX and RX DMA streams but
-*          because of the streams ordering the RX stream has always priority
-*          over the TX stream.
-*/
+ * @brief   I2C1 DMA priority (0..3|lowest..highest).
+ * @note    The priority level is used for both the TX and RX DMA streams but
+ *          because of the streams ordering the RX stream has always priority
+ *          over the TX stream.
+ */
 #if !defined(STM32_I2C_I2C1_DMA_PRIORITY) || defined(__DOXYGEN__)
 #define STM32_I2C_I2C1_DMA_PRIORITY         1
 #endif
 
 /**
-* @brief   I2C2 DMA priority (0..3|lowest..highest).
-* @note    The priority level is used for both the TX and RX DMA streams but
-*          because of the streams ordering the RX stream has always priority
-*          over the TX stream.
-*/
+ * @brief   I2C2 DMA priority (0..3|lowest..highest).
+ * @note    The priority level is used for both the TX and RX DMA streams but
+ *          because of the streams ordering the RX stream has always priority
+ *          over the TX stream.
+ */
 #if !defined(STM32_I2C_I2C2_DMA_PRIORITY) || defined(__DOXYGEN__)
 #define STM32_I2C_I2C2_DMA_PRIORITY         1
 #endif
@@ -105,21 +117,30 @@
  *          error can only happen because programming errors.
  */
 #if !defined(STM32_I2C_DMA_ERROR_HOOK) || defined(__DOXYGEN__)
-#define STM32_I2C_DMA_ERROR_HOOK(i2cp)  chSysHalt()
+#define STM32_I2C_DMA_ERROR_HOOK(i2cp)      chSysHalt()
 #endif
-
-/* Streams for the DMA peripheral.*/
-#define STM32_I2C_I2C1_RX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 3)
-#define STM32_I2C_I2C1_TX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 2)
-#define STM32_I2C_I2C2_RX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 5)
-#define STM32_I2C_I2C2_TX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 4)
-
-#define STM32F0XX_I2C
 /** @} */
 
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
+
+/* Streams for the DMA peripheral.*/
+#if defined(STM32F0XX)
+#define STM32_I2C_I2C1_RX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 3)
+#define STM32_I2C_I2C1_TX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 2)
+#define STM32_I2C_I2C2_RX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 5)
+#define STM32_I2C_I2C2_TX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 4)
+
+#elif defined(STM32F30X) || defined(STM32F37X)
+#define STM32_I2C_I2C1_RX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 7)
+#define STM32_I2C_I2C1_TX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 6)
+#define STM32_I2C_I2C2_RX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 5)
+#define STM32_I2C_I2C2_TX_DMA_STREAM     STM32_DMA_STREAM_ID(1, 4)
+
+#else
+#error "device unsupported by I2Cv2 driver"
+#endif
 
 /** @brief  error checks */
 #if STM32_I2C_USE_I2C1 && !STM32_HAS_I2C1
@@ -179,25 +200,25 @@ typedef uint16_t i2caddr_t;
 typedef uint32_t i2cflags_t;
 
 /**
- * @brief   Supported modes for the I2C bus.
- */
-typedef enum {
-  OPMODE_I2C = 1,
-  OPMODE_SMBUS_DEVICE = 2,
-  OPMODE_SMBUS_HOST = 3,
-} i2copmode_t;
-
-/**
  * @brief Driver configuration structure.
  */
 typedef struct {
-  i2copmode_t     op_mode;       /**< @brief Specifies the I2C mode.        */
-  uint32_t        clock_timing;  /**< @brief Specifies the clock timing
-                                      @note See TRM for further info.       */
-  uint32_t        cr1;           /**< @brief I2C register initialization
-                                             data.                          */
-  uint32_t        cr2;           /**< @brief I2C register initialization
-                                             data.                          */
+  /**
+   * @brief   TIMINGR register initialization.
+   * @note    Refer to the STM32 reference manual, the values are affected
+   *          by the system clock settings in mcuconf.h.
+   */
+  uint32_t        timingr;
+  /**
+   * @brief   CR1 register initialization.
+   * @note    Leave to zero unless you know what you are doing.
+   */
+  uint32_t        cr1;
+  /**
+   * @brief   CR2 register initialization.
+   * @note    Only the ADD10 bit can eventually be specified here.
+   */
+  uint32_t        cr2;
 } I2CConfig;
 
 /**
@@ -244,9 +265,13 @@ struct I2CDriver{
    */
   i2caddr_t                 addr;
   /**
-   * @brief     DMA mode bit mask.
+   * @brief RX DMA mode bit mask.
    */
-  uint32_t                  dmamode;
+  uint32_t                  rxdmamode;
+  /**
+   * @brief TX DMA mode bit mask.
+   */
+  uint32_t                  txdmamode;
   /**
    * @brief     Receive DMA channel.
    */

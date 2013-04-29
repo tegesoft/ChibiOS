@@ -1,21 +1,17 @@
 /*
-    ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012,2013 Giovanni Di Sirio.
+    ChibiOS/RT - Copyright (C) 2006-2013 Giovanni Di Sirio
 
-    This file is part of ChibiOS/RT.
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-    ChibiOS/RT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+        http://www.apache.org/licenses/LICENSE-2.0
 
-    ChibiOS/RT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
 
 #include "ch.h"
@@ -54,54 +50,56 @@ static void adcerrorcallback(ADCDriver *adcp, adcerror_t err) {
 /*
  * ADC conversion group.
  * Mode:        Linear buffer, 8 samples of 2 channels, SW triggered.
- * Channels:    IN7, IN8.
+ * Channels:    IN1, IN9.
  */
 static const ADCConversionGroup adcgrpcfg1 = {
   FALSE,
   ADC_GRP1_NUM_CHANNELS,
   NULL,
   adcerrorcallback,
-  0,                        /* CFGR    */
-  ADC_TR(0, 4095),          /* TR1     */
-  0,                        /* CCR     */
-  {                         /* SMPR[2] */
-    0,
-    0
-  },
-  {                         /* SQR[4]  */
-    ADC_SQR1_SQ1_N(ADC_CHANNEL_IN7) | ADC_SQR1_SQ2_N(ADC_CHANNEL_IN8),
-    0,
-    0,
-    0
+  .u.adc = {
+    0,                      /* CR1      */
+    ADC_CR2_SWSTART,        /* CR2      */
+    0,                      /* LTR      */
+    0,                      /* HTR      */
+    {                       /* SMPR[2]  */
+      0,
+      ADC_SMPR2_SMP_AN9(ADC_SAMPLE_41P5) | ADC_SMPR2_SMP_AN1(ADC_SAMPLE_41P5),
+    },
+    {                       /* SQR[3]   */
+      0,
+      0,
+      ADC_SQR3_SQ2_N(ADC_CHANNEL_IN9) | ADC_SQR3_SQ1_N(ADC_CHANNEL_IN1)
+    }
   }
 };
 
 /*
  * ADC conversion group.
  * Mode:        Continuous, 16 samples of 8 channels, SW triggered.
- * Channels:    IN7, IN8, IN7, IN8, IN7, IN8, Sensor, VBat/2.
+ * Channels:    IN1, IN9, IN1, IN9, IN1, IN9, VBat, Sensor.
  */
 static const ADCConversionGroup adcgrpcfg2 = {
   TRUE,
   ADC_GRP2_NUM_CHANNELS,
   adccallback,
   adcerrorcallback,
-  0,                                /* CFGR    */
-  ADC_TR(0, 4095),                  /* TR1     */
-  ADC_CCR_TSEN | ADC_CCR_VBATEN,    /* CCR     */
-  {                                 /* SMPR[2] */
-    ADC_SMPR1_SMP_AN7(ADC_SMPR_SMP_19P5)
-    | ADC_SMPR1_SMP_AN8(ADC_SMPR_SMP_19P5),
-    ADC_SMPR2_SMP_AN16(ADC_SMPR_SMP_61P5)
-    | ADC_SMPR2_SMP_AN17(ADC_SMPR_SMP_61P5),
-  },
-  {                                 /* SQR[4]  */
-    ADC_SQR1_SQ1_N(ADC_CHANNEL_IN7)  | ADC_SQR1_SQ2_N(ADC_CHANNEL_IN8) |
-    ADC_SQR1_SQ3_N(ADC_CHANNEL_IN7)  | ADC_SQR1_SQ4_N(ADC_CHANNEL_IN8),
-    ADC_SQR2_SQ5_N(ADC_CHANNEL_IN7)  | ADC_SQR2_SQ6_N(ADC_CHANNEL_IN8) |
-    ADC_SQR2_SQ7_N(ADC_CHANNEL_IN16) | ADC_SQR2_SQ8_N(ADC_CHANNEL_IN17),
-    0,
-    0
+  .u.adc = {
+    0,                      /* CR1      */
+    ADC_CR2_SWSTART,        /* CR2      */
+    0,                      /* LTR      */
+    0,                      /* HTR      */
+    {                       /* SMPR[2]  */
+      ADC_SMPR1_SMP_SENSOR(ADC_SAMPLE_239P5) | ADC_SMPR1_SMP_VREF(ADC_SAMPLE_239P5),
+      ADC_SMPR2_SMP_AN9(ADC_SAMPLE_41P5)     | ADC_SMPR2_SMP_AN1(ADC_SAMPLE_41P5)
+    },
+    {                       /* SQR[3]  */
+      0,
+      ADC_SQR2_SQ8_N(ADC_CHANNEL_SENSOR) | ADC_SQR2_SQ7_N(ADC_CHANNEL_VBAT),
+      ADC_SQR3_SQ6_N(ADC_CHANNEL_IN9)    | ADC_SQR3_SQ5_N(ADC_CHANNEL_IN1) |
+      ADC_SQR3_SQ4_N(ADC_CHANNEL_IN9)    | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN1) |
+      ADC_SQR3_SQ2_N(ADC_CHANNEL_IN9)    | ADC_SQR3_SQ1_N(ADC_CHANNEL_IN1)
+    }
   }
 };
 
@@ -114,9 +112,9 @@ static msg_t Thread1(void *arg) {
   (void)arg;
   chRegSetThreadName("blinker");
   while (TRUE) {
-    palSetPad(GPIOE, GPIOE_LED10_RED);
+    palClearPad(GPIOC, GPIOC_LED1);
     chThdSleepMilliseconds(500);
-    palClearPad(GPIOE, GPIOE_LED10_RED);
+    palSetPad(GPIOC, GPIOC_LED1);
     chThdSleepMilliseconds(500);
   }
   return 0;
@@ -138,20 +136,18 @@ int main(void) {
   chSysInit();
 
   /*
-   * Setting up analog inputs used by the demo.
-   */
-  palSetGroupMode(GPIOC, PAL_PORT_BIT(1) | PAL_PORT_BIT(2),
-                  0, PAL_MODE_INPUT_ANALOG);
-
-  /*
    * Creates the blinker thread.
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
   /*
-   * Activates the ADC1 driver and the temperature sensor.
+   * Activates the ADC1 driver, the temperature sensor and the VBat
+   * measurement.
    */
   adcStart(&ADCD1, NULL);
+  adcSTM32Calibrate(&ADCD1);
+  adcSTM32EnableTSVREFE();
+  adcSTM32EnableVBATE();
 
   /*
    * Linear conversion.
@@ -168,7 +164,7 @@ int main(void) {
    * Normal main() thread activity, in this demo it does nothing.
    */
   while (TRUE) {
-    if (palReadPad(GPIOA, GPIOA_BUTTON)) {
+    if (palReadPad(GPIOA, GPIOA_WKUP_BUTTON)) {
       adcStopConversion(&ADCD1);
     }
     chThdSleepMilliseconds(500);

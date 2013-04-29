@@ -89,8 +89,19 @@
 *****************************************************************************
 
 *** 2.5.2 ***
+- FIX: Fixed USB driver possible deadlock under certain configurations (bug
+  #406)(backported to 2.4.4).
+- FIX: Fixed USB driver cannot be stopped (bug #405)(backported to 2.4.4).
+- FIX: Fixed several spelling errors (bug #404).
+- FIX: Fixed serial port in STM32F3 discovery test case (bug #402).
+- FIX: Fixed add %i to chprintf (bug #401).
+- FIX: Fixed STM32F051 various (bug #400).
+- FIX: Fixed STM32F103 HSI configuration (bug #399).
+- FIX: Fixed patch to allow simulator to be restarted quicker (bug #398).
+- FIX: Fixed blkDisconnect macro typo (bug #397).
 - FIX: Fixed STM32 SPI (V2) driver hangs (bug 3608241).
-- FIX: Fixed fixed I2C malfunction after fixing bug 3607518 (bug 3607549).
+- FIX: Fixed fixed I2C malfunction after fixing bug 3607518 (bug 3607549)
+  (backported to 2.4.4).
 - FIX: Fixed spurious interrupt disabling an STM32 DMA stream (bug 3607518)
   (backported to 2.4.4).
 - FIX: Fixed start of any ADC disables VREF and VBAT (bug 3607467)
@@ -138,10 +149,18 @@
   (backported to 2.4.3).
 - FIX: Fixed wrong SPI path in platform_f105_f107.mk (bug 3598151).
 - FIX: Fixed PHY powerdown issues not fixed (bug 3596911).
+- NEW: Added new pwmIsChannelEnabledI() API to the PWM driver, implemented
+  in the STM32 driver.
+- NEW: Added support for timers 6, 7, 9, 11, 12, 14 to the STM32 GPT driver.
+- NEW: Added support for timer 9 to the STM32 PWM driver.
+- NEW: Relicensed parts of the distribution tree under the Apache 2.0
+  license in order to make specific parts of the code more accessible
+  to the open source community and adopters.
 - NEW: Added ADC(EQADC), HAL, ICU, PAL, PWM, Serial drivers for SPC5xx
   platforms, tests to be added on the various sub-families.
 - NEW: Added support for SPC56ELxx, SPC560BCxx, SPC560Pxx, SPC560Mxx and
   SPC564Axx platforms.
+- NEW: Added ADC/SDADC driver for the STM32F37x family.
 - NEW: Added support for the STM32F37x family.
 - NEW: Now the general documentation includes data extracted from the low
   level driver templates. Per-platform/architecture documents are no more

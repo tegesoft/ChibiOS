@@ -1,16 +1,18 @@
 /*
- * Licensed under ST Liberty SW License Agreement V2, (the "License");
- * You may not use this file except in compliance with the License.
- * You may obtain a copy of the License at:
- *
- *        http://www.st.com/software_license_agreement_liberty_v2
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+    SPC5 HAL - Copyright (C) 2013 STMicroelectronics
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
 
 /**
  * @file    SPC5xx/EQADC_v1/adc_lld.c
@@ -267,6 +269,21 @@
 #define ADC_ACR_RESSEL_8BITS    (2U << 6)
 /** @} */
 
+/**
+ * @name    ADC PUDCRx registers definitions
+ * @{
+ */
+#define ADC_PUDCR_NONE          0x0000
+#define ADC_PUDCR_UP_200K       0x1100
+#define ADC_PUDCR_UP_100K       0x1200
+#define ADC_PUDCR_UP_5K         0x1300
+#define ADC_PUDCR_DOWN_200K     0x2100
+#define ADC_PUDCR_DOWN_100K     0x2200
+#define ADC_PUDCR_DOWN_5K       0x2300
+#define ADC_PUDCR_UP_DOWN_200K  0x3100
+#define ADC_PUDCR_UP_DOWN_100K  0x3200
+/** @} */
+
 /*===========================================================================*/
 /* Driver pre-compile time settings.                                         */
 /*===========================================================================*/
@@ -424,7 +441,14 @@
  * @brief   Initialization value for PUDCRx registers.
  */
 #if !defined(SPC5_ADC_PUDCR) || defined(__DOXYGEN__)
-#define SPC5_ADC_PUDCR                     {0, 0, 0, 0, 0, 0, 0, 0}
+#define SPC5_ADC_PUDCR                      {ADC_PUDCR_NONE,                \
+                                             ADC_PUDCR_NONE,                \
+                                             ADC_PUDCR_NONE,                \
+                                             ADC_PUDCR_NONE,                \
+                                             ADC_PUDCR_NONE,                \
+                                             ADC_PUDCR_NONE,                \
+                                             ADC_PUDCR_NONE,                \
+                                             ADC_PUDCR_NONE}
 #endif
 /** @} */
 
@@ -436,11 +460,11 @@
 #error "EQADC not present in the selected device"
 #endif
 
-#define SPC5_ADC_USE_ADC0                   (SPC5_ADC_USE_ADC0_Q0 |         \
-                                             SPC5_ADC_USE_ADC0_Q1 |         \
+#define SPC5_ADC_USE_ADC0                   (SPC5_ADC_USE_ADC0_Q0 ||        \
+                                             SPC5_ADC_USE_ADC0_Q1 ||        \
                                              SPC5_ADC_USE_ADC0_Q2)
-#define SPC5_ADC_USE_ADC1                   (SPC5_ADC_USE_ADC1_Q3 |         \
-                                             SPC5_ADC_USE_ADC1_Q4 |         \
+#define SPC5_ADC_USE_ADC1                   (SPC5_ADC_USE_ADC1_Q3 ||        \
+                                             SPC5_ADC_USE_ADC1_Q4 ||        \
                                              SPC5_ADC_USE_ADC1_Q5)
 
 #if !SPC5_ADC_USE_ADC0 && !SPC5_ADC_USE_ADC1
@@ -566,7 +590,7 @@ typedef struct {
 
 /**
  * @brief   Driver configuration structure.
- * @note    It could be empty on some architectures.
+ * @note    Empty in this implementation can be ignored.
  */
 typedef struct {
   uint32_t                  dummy;

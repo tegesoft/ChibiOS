@@ -1,21 +1,17 @@
 /*
-    ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012,2013 Giovanni Di Sirio.
+    ChibiOS/RT - Copyright (C) 2006-2013 Giovanni Di Sirio
 
-    This file is part of ChibiOS/RT.
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-    ChibiOS/RT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+        http://www.apache.org/licenses/LICENSE-2.0
 
-    ChibiOS/RT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
 /*
    Concepts and parts of this file have been contributed by Uladzimir Pylinsky
@@ -69,15 +65,23 @@
 
 #define I2C_EV5_MASTER_MODE_SELECT                                          \
   ((uint32_t)(((I2C_SR2_MSL | I2C_SR2_BUSY) << 16) | I2C_SR1_SB))
+
 #define I2C_EV6_MASTER_TRA_MODE_SELECTED                                    \
-  ((uint32_t)(((I2C_SR2_MSL|I2C_SR2_BUSY|I2C_SR2_TRA) << 16) |              \
-              I2C_SR1_ADDR|I2C_SR1_TXE))
+  ((uint32_t)(((I2C_SR2_MSL | I2C_SR2_BUSY | I2C_SR2_TRA) << 16) |          \
+              I2C_SR1_ADDR | I2C_SR1_TXE))
+
 #define I2C_EV6_MASTER_REC_MODE_SELECTED                                    \
-  ((uint32_t)(((I2C_SR2_MSL|I2C_SR2_BUSY)<< 16) | I2C_SR1_ADDR))
+  ((uint32_t)(((I2C_SR2_MSL | I2C_SR2_BUSY)<< 16) | I2C_SR1_ADDR))
+
 #define I2C_EV8_2_MASTER_BYTE_TRANSMITTED                                   \
   ((uint32_t)(((I2C_SR2_MSL | I2C_SR2_BUSY | I2C_SR2_TRA) << 16) |          \
               I2C_SR1_BTF | I2C_SR1_TXE))
+
 #define I2C_EV_MASK 0x00FFFFFF
+
+#define I2C_ERROR_MASK                                                      \
+  ((uint16_t)(I2C_SR1_BERR | I2C_SR1_ARLO | I2C_SR1_AF | I2C_SR1_OVR |      \
+              I2C_SR1_PECERR | I2C_SR1_TIMEOUT | I2C_SR1_SMBALERT))
 
 /*===========================================================================*/
 /* Driver exported variables.                                                */
@@ -384,57 +388,45 @@ static void i2c_lld_serve_tx_end_irq(I2CDriver *i2cp, uint32_t flags) {
  * @brief   I2C error handler.
  *
  * @param[in] i2cp      pointer to the @p I2CDriver object
+ * @param[in]  sr       content of the SR1 register to be decoded
  *
  * @notapi
  */
-static void i2c_lld_serve_error_interrupt(I2CDriver *i2cp) {
-  I2C_TypeDef *dp = i2cp->i2c;
-  i2cflags_t errors;
+static void i2c_lld_serve_error_interrupt(I2CDriver *i2cp, uint16_t sr) {
 
   /* Clears interrupt flags just to be safe.*/
-  chSysLockFromIsr();
   dmaStreamDisable(i2cp->dmatx);
   dmaStreamDisable(i2cp->dmarx);
-  chSysUnlockFromIsr();
 
-  errors = I2CD_NO_ERROR;
+  i2cp->errors = I2CD_NO_ERROR;
 
-  if (dp->SR1 & I2C_SR1_BERR) {                     /* Bus error.           */
-    dp->SR1 &= ~I2C_SR1_BERR;
-    errors |= I2CD_BUS_ERROR;
+  if (sr & I2C_SR1_BERR)                            /* Bus error.           */
+    i2cp->errors |= I2CD_BUS_ERROR;
+
+  if (sr & I2C_SR1_ARLO)                            /* Arbitration lost.    */
+    i2cp->errors |= I2CD_ARBITRATION_LOST;
+
+  if (sr & I2C_SR1_AF) {                            /* Acknowledge fail.    */
+    i2cp->i2c->CR2 &= ~I2C_CR2_ITEVTEN;
+    i2cp->i2c->CR1 |= I2C_CR1_STOP;                 /* Setting stop bit.    */
+    i2cp->errors |= I2CD_ACK_FAILURE;
   }
-  if (dp->SR1 & I2C_SR1_ARLO) {                     /* Arbitration lost.    */
-    dp->SR1 &= ~I2C_SR1_ARLO;
-    errors |= I2CD_ARBITRATION_LOST;
-  }
-  if (dp->SR1 & I2C_SR1_AF) {                       /* Acknowledge fail.    */
-    dp->SR1 &= ~I2C_SR1_AF;
-    dp->CR2 &= ~I2C_CR2_ITEVTEN;
-    dp->CR1 |= I2C_CR1_STOP;                        /* Setting stop bit.    */
-    errors |= I2CD_ACK_FAILURE;
-  }
-  if (dp->SR1 & I2C_SR1_OVR) {                      /* Overrun.             */
-    dp->SR1 &= ~I2C_SR1_OVR;
-    errors |= I2CD_OVERRUN;
-  }
-  if (dp->SR1 & I2C_SR1_PECERR) {                   /* PEC error.           */
-    dp->SR1 &= ~I2C_SR1_PECERR;
-    errors |= I2CD_PEC_ERROR;
-  }
-  if (dp->SR1 & I2C_SR1_TIMEOUT) {                  /* SMBus Timeout.       */
-    dp->SR1 &= ~I2C_SR1_TIMEOUT;
-    errors |= I2CD_TIMEOUT;
-  }
-  if (dp->SR1 & I2C_SR1_SMBALERT) {                 /* SMBus alert.         */
-    dp->SR1 &= ~I2C_SR1_SMBALERT;
-    errors |= I2CD_SMB_ALERT;
-  }
+
+  if (sr & I2C_SR1_OVR)                             /* Overrun.             */
+    i2cp->errors |= I2CD_OVERRUN;
+
+  if (sr & I2C_SR1_TIMEOUT)                         /* SMBus Timeout.       */
+    i2cp->errors |= I2CD_TIMEOUT;
+
+  if (sr & I2C_SR1_PECERR)                          /* PEC error.           */
+    i2cp->errors |= I2CD_PEC_ERROR;
+
+  if (sr & I2C_SR1_SMBALERT)                        /* SMBus alert.         */
+    i2cp->errors |= I2CD_SMB_ALERT;
 
   /* If some error has been identified then sends wakes the waiting thread.*/
-  if (errors != I2CD_NO_ERROR) {
-    i2cp->errors = errors;
+  if (i2cp->errors != I2CD_NO_ERROR)
     wakeup_isr(i2cp, RDY_RESET);
-  }
 }
 
 /*===========================================================================*/
@@ -460,10 +452,12 @@ CH_IRQ_HANDLER(I2C1_EV_IRQHandler) {
  * @brief   I2C1 error interrupt handler.
  */
 CH_IRQ_HANDLER(I2C1_ER_IRQHandler) {
+  uint16_t sr = I2CD1.i2c->SR1;
 
   CH_IRQ_PROLOGUE();
 
-  i2c_lld_serve_error_interrupt(&I2CD1);
+  I2CD1.i2c->SR1 = ~(sr & I2C_ERROR_MASK);
+  i2c_lld_serve_error_interrupt(&I2CD1, sr);
 
   CH_IRQ_EPILOGUE();
 }
@@ -490,10 +484,12 @@ CH_IRQ_HANDLER(I2C2_EV_IRQHandler) {
  * @notapi
  */
 CH_IRQ_HANDLER(I2C2_ER_IRQHandler) {
+  uint16_t sr = I2CD2.i2c->SR1;
 
   CH_IRQ_PROLOGUE();
 
-  i2c_lld_serve_error_interrupt(&I2CD2);
+  I2CD2.i2c->SR1 = ~(sr & I2C_ERROR_MASK);
+  i2c_lld_serve_error_interrupt(&I2CD2, sr);
 
   CH_IRQ_EPILOGUE();
 }
@@ -520,10 +516,12 @@ CH_IRQ_HANDLER(I2C3_EV_IRQHandler) {
  * @notapi
  */
 CH_IRQ_HANDLER(I2C3_ER_IRQHandler) {
+  uint16_t sr = I2CD3.i2c->SR1;
 
   CH_IRQ_PROLOGUE();
 
-  i2c_lld_serve_error_interrupt(&I2CD3);
+  I2CD3.i2c->SR1 = ~(sr & I2C_ERROR_MASK);
+  i2c_lld_serve_error_interrupt(&I2CD3, sr);
 
   CH_IRQ_EPILOGUE();
 }

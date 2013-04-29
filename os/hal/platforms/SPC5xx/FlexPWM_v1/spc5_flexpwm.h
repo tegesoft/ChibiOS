@@ -1,27 +1,29 @@
 /*
- * Licensed under ST Liberty SW License Agreement V2, (the "License");
- * You may not use this file except in compliance with the License.
- * You may obtain a copy of the License at:
- *
- *        http://www.st.com/software_license_agreement_liberty_v2
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+    SPC5 HAL - Copyright (C) 2013 STMicroelectronics
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
 
 /**
- * @file    FlexPWM_v1/flexpwm.h
+ * @file    FlexPWM_v1/spc5_flexpwm.h
  * @brief   SPC5xx FlexPWM header file.
  *
  * @addtogroup PWM
  * @{
  */
 
-#ifndef _FLEXPWM_H_
-#define _FLEXPWM_H_
+#ifndef _SPC5_FLEXPWM_H_
+#define _SPC5_FLEXPWM_H_
 
 /*===========================================================================*/
 /* Driver constants.                                                         */
@@ -466,7 +468,6 @@ struct spc5_flexpwm {
   } FFILT; /* Fault FilterRegister */
 
 };
-/* end of FLEXPWM_tag */
 
 /*===========================================================================*/
 /* Driver macros.                                                            */
@@ -476,15 +477,15 @@ struct spc5_flexpwm {
  * @name    FlexPWM units references
  * @{
  */
-#if SPC5_HAS_FLEXPWM0
+#if SPC5_HAS_FLEXPWM0 || defined(__DOXYGEN__)
 #define SPC5_FLEXPWM_0      (*(volatile struct spc5_flexpwm *)0xFFE24000UL)
 #endif
 
-#if SPC5_HAS_FLEXPWM1
+#if SPC5_HAS_FLEXPWM1 || defined(__DOXYGEN__)
 #define SPC5_FLEXPWM_1      (*(volatile struct spc5_flexpwm *)0xFFE28000UL)
 #endif
 /** @} */
 
-#endif /* _FLEXPWM_H_ */
+#endif /* _SPC5_FLEXPWM_H_ */
 
 /** @} */

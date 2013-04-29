@@ -1,16 +1,18 @@
 /*
- * Licensed under ST Liberty SW License Agreement V2, (the "License");
- * You may not use this file except in compliance with the License.
- * You may obtain a copy of the License at:
- *
- *        http://www.st.com/software_license_agreement_liberty_v2
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+    SPC5 HAL - Copyright (C) 2013 STMicroelectronics
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
 
 /**
  * @file    FlexPWM_v1/pwm_lld.c
@@ -71,7 +73,7 @@ PWMDriver PWMD5;
 
 /**
  * @brief   PWMD6 driver identifier.
- * @note    The driver PWMD6 allocates the timer TIM4 when enabled.
+ * @note    The driver PWMD6 allocates the timer TIM6 when enabled.
  */
 #if SPC5_PWM_USE_SMOD5 || defined(__DOXYGEN__)
 PWMDriver PWMD6;
@@ -79,7 +81,7 @@ PWMDriver PWMD6;
 
 /**
  * @brief   PWMD7 driver identifier.
- * @note    The driver PWMD7 allocates the timer TIM4 when enabled.
+ * @note    The driver PWMD7 allocates the timer TIM7 when enabled.
  */
 #if SPC5_PWM_USE_SMOD6 || defined(__DOXYGEN__)
 PWMDriver PWMD7;
@@ -87,7 +89,7 @@ PWMDriver PWMD7;
 
 /**
  * @brief   PWMD8 driver identifier.
- * @note    The driver PWMD8 allocates the timer TIM4 when enabled.
+ * @note    The driver PWMD8 allocates the timer TIM8 when enabled.
  */
 #if SPC5_PWM_USE_SMOD7 || defined(__DOXYGEN__)
 PWMDriver PWMD8;
@@ -127,7 +129,7 @@ void pwm_lld_start_submodule(PWMDriver *pwmp, uint8_t sid) {
   pwmp->flexpwmp->SUB[sid].STS.R = 0xFFFF;
 
   /* Clears LDOK and initializes the registers.*/
-  pwmp->flexpwmp->MCTRL.B.CLDOK |= (0x0 | (1U << sid));
+  pwmp->flexpwmp->MCTRL.B.CLDOK |= 1U << sid;
 
   /* Setting PWM clock frequency and submodule prescaler.*/
   psc = SPC5_FLEXPWM0_CLK / pwmp->config->frequency;
@@ -167,13 +169,13 @@ void pwm_lld_start_submodule(PWMDriver *pwmp, uint8_t sid) {
   }
 
   /* Disables PWM FAULT function. */
-  pwmp->flexpwmp->SUB[sid].DISMAP.R = 0x0000;
-  pwmp->flexpwmp->SUB[sid].CTRL2.B.INDEP = 1;
+  pwmp->flexpwmp->SUB[sid].DISMAP.R = 0;
+  pwmp->flexpwmp->SUB[sid].CTRL2.B.INDEP = 1U;
 
   /* Sets PWM period.*/
   pwmperiod = pwmp->period;
   pwmp->flexpwmp->SUB[sid].INIT.R = ~(pwmperiod / 2) + 1U;
-  pwmp->flexpwmp->SUB[sid].VAL[0].R = 0x0000;
+  pwmp->flexpwmp->SUB[sid].VAL[0].R = 0;
   pwmp->flexpwmp->SUB[sid].VAL[1].R = pwmperiod / 2;
 
   /* Sets the submodule channels.*/
@@ -200,21 +202,24 @@ void pwm_lld_start_submodule(PWMDriver *pwmp, uint8_t sid) {
   switch (pwmp->config->channels[0].mode & PWM_OUTPUT_MASK) {
   case PWM_OUTPUT_ACTIVE_LOW:
     pwmp->flexpwmp->SUB[sid].OCTRL.B.POLA = 1;
-    /* Enables CHA mask.*/
-    pwmp->flexpwmp->MASK.B.MASKA |= (0x0 | (1U << sid));
-    /* Enables CHA.*/
-    pwmp->flexpwmp->OUTEN.B.PWMA_EN |= (0x0 | (1U << sid));
+
+    /* Enables CHA mask and CHA.*/
+    pwmp->flexpwmp->MASK.B.MASKA |= 1U << sid;
+    pwmp->flexpwmp->OUTEN.B.PWMA_EN |= 1U << sid;
+
     break;
   case PWM_OUTPUT_ACTIVE_HIGH:
     pwmp->flexpwmp->SUB[sid].OCTRL.B.POLA = 0;
-    /* Enables CHA mask.*/
-    pwmp->flexpwmp->MASK.B.MASKA |= (0x0 | (1U << sid));
-    /* Enables CHA.*/
-    pwmp->flexpwmp->OUTEN.B.PWMA_EN |= (0x0 | (1U << sid));
+
+    /* Enables CHA mask and CHA.*/
+    pwmp->flexpwmp->MASK.B.MASKA |= 1U << sid;
+    pwmp->flexpwmp->OUTEN.B.PWMA_EN |= 1U << sid;
+
     break;
   case PWM_OUTPUT_DISABLED:
     /* Enables CHA mask.*/
-    pwmp->flexpwmp->MASK.B.MASKA |= (0x0 | (1U << sid));
+    pwmp->flexpwmp->MASK.B.MASKA |= 1U << sid;
+
     break;
   default:
     ;
@@ -222,21 +227,24 @@ void pwm_lld_start_submodule(PWMDriver *pwmp, uint8_t sid) {
   switch (pwmp->config->channels[1].mode & PWM_OUTPUT_MASK) {
   case PWM_OUTPUT_ACTIVE_LOW:
     pwmp->flexpwmp->SUB[sid].OCTRL.B.POLB = 1;
-    /* Enables CHB mask.*/
-    pwmp->flexpwmp->MASK.B.MASKB |= (0x0 | (1U << sid));
-    /* Enables CHB.*/
-    pwmp->flexpwmp->OUTEN.B.PWMB_EN |= (0x0 | (1U << sid));
+
+    /* Enables CHB mask and CHB.*/
+    pwmp->flexpwmp->MASK.B.MASKB |= 1U << sid;
+    pwmp->flexpwmp->OUTEN.B.PWMB_EN |= 1U << sid;
+
     break;
   case PWM_OUTPUT_ACTIVE_HIGH:
     pwmp->flexpwmp->SUB[sid].OCTRL.B.POLB = 0;
-    /* Enables CHB mask.*/
-    pwmp->flexpwmp->MASK.B.MASKB |= (0x0 | (1U << sid));
-    /* Enables CHB.*/
-    pwmp->flexpwmp->OUTEN.B.PWMB_EN |= (0x0 | (1U << sid));
+
+    /* Enables CHB mask and CHB.*/
+    pwmp->flexpwmp->MASK.B.MASKB |= 1U << sid;
+    pwmp->flexpwmp->OUTEN.B.PWMB_EN |= 1U << sid;
+
     break;
   case PWM_OUTPUT_DISABLED:
     /* Enables CHB mask.*/
-    pwmp->flexpwmp->MASK.B.MASKB |= (0x0 | (1U << sid));
+    pwmp->flexpwmp->MASK.B.MASKB |= 1U << sid;
+
     break;
   default:
     ;
@@ -250,14 +258,14 @@ void pwm_lld_start_submodule(PWMDriver *pwmp, uint8_t sid) {
                 "the PWM chB must be set in PWM_OUTPUT_ACTIVE_LOW");
     pwmp->flexpwmp->SUB[sid].OCTRL.B.POLA = 1;
     pwmp->flexpwmp->SUB[sid].CTRL2.B.INDEP = 0;
-    pwmp->flexpwmp->OUTEN.B.PWMA_EN |= (0x0 | (1U << sid));
+    pwmp->flexpwmp->OUTEN.B.PWMA_EN |= 1U << sid;
     break;
   case PWM_COMPLEMENTARY_OUTPUT_ACTIVE_HIGH:
     chDbgAssert(pwmp->config->channels[1].mode == PWM_OUTPUT_ACTIVE_HIGH,
                 "pwm_lld_start_submodule(), #3",
                 "the PWM chB must be set in PWM_OUTPUT_ACTIVE_HIGH");
     pwmp->flexpwmp->SUB[sid].CTRL2.B.INDEP = 0;
-    pwmp->flexpwmp->OUTEN.B.PWMA_EN |= (0x0 | (1U << sid));
+    pwmp->flexpwmp->OUTEN.B.PWMA_EN |= 1U << sid;
     break;
   default:
     ;
@@ -269,17 +277,17 @@ void pwm_lld_start_submodule(PWMDriver *pwmp, uint8_t sid) {
                 "pwm_lld_start_submodule(), #4",
                 "the PWM chA must be set in PWM_OUTPUT_ACTIVE_LOW");
     pwmp->flexpwmp->SUB[sid].CTRL2.B.INDEP = 0;
-    pwmp->flexpwmp->MCTRL.B.IPOL &= ~ (0x0 | (1U << sid));
+    pwmp->flexpwmp->MCTRL.B.IPOL &= ~ (1U << sid);
     pwmp->flexpwmp->SUB[sid].OCTRL.B.POLB = 1;
-    pwmp->flexpwmp->OUTEN.B.PWMB_EN |= (0x0 | (1U << sid));
+    pwmp->flexpwmp->OUTEN.B.PWMB_EN |= 1U << sid;
     break;
   case PWM_COMPLEMENTARY_OUTPUT_ACTIVE_HIGH:
     chDbgAssert(pwmp->config->channels[0].mode == PWM_OUTPUT_ACTIVE_HIGH,
                 "pwm_lld_start_submodule(), #5",
                 "the PWM chA must be set in PWM_OUTPUT_ACTIVE_HIGH");
     pwmp->flexpwmp->SUB[sid].CTRL2.B.INDEP = 0;
-    pwmp->flexpwmp->MCTRL.B.IPOL |= (0x0 | (1U << sid));
-    pwmp->flexpwmp->OUTEN.B.PWMB_EN |= (0x0 | (1U << sid));
+    pwmp->flexpwmp->MCTRL.B.IPOL |= 1U << sid;
+    pwmp->flexpwmp->OUTEN.B.PWMB_EN |= 1U << sid;
     break;
   default:
     ;
@@ -290,8 +298,8 @@ void pwm_lld_start_submodule(PWMDriver *pwmp, uint8_t sid) {
   pwmp->flexpwmp->SUB[sid].CTRL2.B.FORCE = 1U;
 
   /* Updates SMOD registers and starts SMOD.*/
-  pwmp->flexpwmp->MCTRL.B.LDOK |= (0x0 | (1U << sid));
-  pwmp->flexpwmp->MCTRL.B.RUN |= (0x0 | (1U << sid));
+  pwmp->flexpwmp->MCTRL.B.LDOK |= 1U << sid;
+  pwmp->flexpwmp->MCTRL.B.RUN |= 1U << sid;
 }
 
 /**
@@ -313,7 +321,7 @@ void pwm_lld_enable_submodule_channel(PWMDriver *pwmp,
   nwidth = width - (pwmperiod / 2);
 
   /* Clears LDOK.*/
-  pwmp->flexpwmp->MCTRL.B.CLDOK |= (0x0 | (1U << sid));
+  pwmp->flexpwmp->MCTRL.B.CLDOK |= 1U << sid;
 
   /* Active the width interrupt.*/
   if (channel == 0) {
@@ -340,11 +348,11 @@ void pwm_lld_enable_submodule_channel(PWMDriver *pwmp,
     }
 
     /* Removes the channel mask if it is necessary.*/
-    if ((pwmp->flexpwmp->MASK.B.MASKA & (0x0 | (1U << sid))) == 1)
-      pwmp->flexpwmp->MASK.B.MASKA &= ~(0x0 | (1U << sid));
+    if ((pwmp->flexpwmp->MASK.B.MASKA & (1U << sid)) == 1)
+      pwmp->flexpwmp->MASK.B.MASKA &= ~ (1U << sid);
 
     if ((pwmp->config->channels[0].mode & PWM_COMPLEMENTARY_OUTPUT_MASK) != 0) {
-      pwmp->flexpwmp->MASK.B.MASKB &= ~(0x0 | (1U << sid));
+      pwmp->flexpwmp->MASK.B.MASKB &= ~ (1U << sid);
     }
   }
   /* Active the width interrupt.*/
@@ -371,11 +379,11 @@ void pwm_lld_enable_submodule_channel(PWMDriver *pwmp,
     }
 
     /* Removes the channel mask if it is necessary.*/
-    if ((pwmp->flexpwmp->MASK.B.MASKB & (0x0 | (1U << sid))) == 1)
-      pwmp->flexpwmp->MASK.B.MASKB &= ~(0x0 | (1U << sid));
+    if ((pwmp->flexpwmp->MASK.B.MASKB & (1U << sid)) == 1)
+      pwmp->flexpwmp->MASK.B.MASKB &= ~ (1U << sid);
 
     if ((pwmp->config->channels[1].mode & PWM_COMPLEMENTARY_OUTPUT_MASK) != 0) {
-      pwmp->flexpwmp->MASK.B.MASKA &= ~(0x0 | (1U << sid));
+      pwmp->flexpwmp->MASK.B.MASKA &= ~ (1U << sid);
     }
   }
 
@@ -391,7 +399,7 @@ void pwm_lld_enable_submodule_channel(PWMDriver *pwmp,
   pwmp->flexpwmp->SUB[sid].CTRL2.B.FORCE = 1U;
 
   /* Forces reload of the VALUE registers.*/
-  pwmp->flexpwmp->MCTRL.B.LDOK |= (0x0 | (1U << sid));
+  pwmp->flexpwmp->MCTRL.B.LDOK |= 1U << sid;
 }
 
 /**
@@ -407,7 +415,7 @@ void pwm_lld_disable_submodule_channel(PWMDriver *pwmp,
                                    pwmchannel_t channel,
                                    uint8_t sid) {
 
-  pwmp->flexpwmp->MCTRL.B.CLDOK |= (0x0 | (1U << sid));
+  pwmp->flexpwmp->MCTRL.B.CLDOK |= 1U << sid;
 
   /* Disable the width interrupt.*/
   if (channel == 0) {
@@ -419,11 +427,11 @@ void pwm_lld_disable_submodule_channel(PWMDriver *pwmp,
 
     /* Active the channel mask.*/
     if ((pwmp->config->channels[0].mode & PWM_COMPLEMENTARY_OUTPUT_MASK) != 0) {
-      pwmp->flexpwmp->MASK.B.MASKA |= (0x0 | (1U << sid));
-      pwmp->flexpwmp->MASK.B.MASKB |= (0x0 | (1U << sid));
+      pwmp->flexpwmp->MASK.B.MASKA |= 1U << sid;
+      pwmp->flexpwmp->MASK.B.MASKB |= 1U << sid;
     }
     else
-      pwmp->flexpwmp->MASK.B.MASKA |= (0x0 | (1U << sid));
+      pwmp->flexpwmp->MASK.B.MASKA |= 1U << sid;
   }
   /* Disable the width interrupt.*/
   else if (channel == 1) {
@@ -435,11 +443,11 @@ void pwm_lld_disable_submodule_channel(PWMDriver *pwmp,
 
     /* Active the channel mask.*/
     if ((pwmp->config->channels[1].mode & PWM_COMPLEMENTARY_OUTPUT_MASK) != 0) {
-      pwmp->flexpwmp->MASK.B.MASKA |= (0x0 | (1U << sid));
-      pwmp->flexpwmp->MASK.B.MASKB |= (0x0 | (1U << sid));
+      pwmp->flexpwmp->MASK.B.MASKA |= 1U << sid;
+      pwmp->flexpwmp->MASK.B.MASKB |= 1U << sid;
     }
     else
-      pwmp->flexpwmp->MASK.B.MASKB |= (0x0 | (1U << sid));
+      pwmp->flexpwmp->MASK.B.MASKB |= 1U << sid;
   }
 
   /* Sets the MASK registers.*/
@@ -447,15 +455,15 @@ void pwm_lld_disable_submodule_channel(PWMDriver *pwmp,
   pwmp->flexpwmp->SUB[sid].CTRL2.B.FORCE = 1U;
 
   /* Disable RIE interrupt to prevent reload interrupt.*/
-  if ((pwmp->flexpwmp->MASK.B.MASKA & (0x0 | (1U << sid))) &&
-      (pwmp->flexpwmp->MASK.B.MASKB & (0x0 | (1U << sid))) == 1) {
+  if ((pwmp->flexpwmp->MASK.B.MASKA & (1U << sid)) &&
+      (pwmp->flexpwmp->MASK.B.MASKB & (1U << sid)) == 1) {
     pwmp->flexpwmp->SUB[sid].INTEN.B.RIE = 0;
 
     /* Clear the reload flag.*/
     pwmp->flexpwmp->SUB[sid].STS.B.RF = 1U;
     }
 
-  pwmp->flexpwmp->MCTRL.B.LDOK |= (0x0 | (1U << sid));
+  pwmp->flexpwmp->MCTRL.B.LDOK |= (1U << sid);
 }
 
 /**
@@ -982,7 +990,7 @@ void pwm_lld_init(void) {
 
 #if (SPC5_PWM_USE_SMOD6)
   /* Driver initialization.*/
-  pwmObjectInit(&PWMD3);
+  pwmObjectInit(&PWMD7);
   PWMD7.flexpwmp = &SPC5_FLEXPWM_1;
   INTC.PSR[SPC5_FLEXPWM1_RF2_NUMBER].R = SPC5_PWM_SMOD6_PRIORITY;
   INTC.PSR[SPC5_FLEXPWM1_COF2_NUMBER].R = SPC5_PWM_SMOD6_PRIORITY;
@@ -993,7 +1001,7 @@ void pwm_lld_init(void) {
 
 #if (SPC5_PWM_USE_SMOD7)
   /* Driver initialization.*/
-  pwmObjectInit(&PWMD4);
+  pwmObjectInit(&PWMD8);
   PWMD8.flexpwmp = &SPC5_FLEXPWM_1;
   INTC.PSR[SPC5_FLEXPWM1_RF3_NUMBER].R = SPC5_PWM_SMOD7_PRIORITY;
   INTC.PSR[SPC5_FLEXPWM1_COF3_NUMBER].R = SPC5_PWM_SMOD7_PRIORITY;
@@ -1072,8 +1080,7 @@ void pwm_lld_start(PWMDriver *pwmp) {
      * If this is the first FlexPWM0 submodule
      * activated then the FlexPWM0 is enabled.
      */
-#if SPC5_PWM_USE_SMOD0 || SPC5_PWM_USE_SMOD1 ||                             \
-    SPC5_PWM_USE_SMOD2 || SPC5_PWM_USE_SMOD3
+#if SPC5_PWM_USE_FLEXPWM0
     /* Set Peripheral Clock.*/
     if (flexpwm_active_submodules0 == 1) {
       halSPCSetPeripheralClockMode(SPC5_FLEXPWM0_PCTL,
@@ -1081,8 +1088,7 @@ void pwm_lld_start(PWMDriver *pwmp) {
     }
 #endif
 
-#if SPC5_PWM_USE_SMOD4 || SPC5_PWM_USE_SMOD5 ||                             \
-    SPC5_PWM_USE_SMOD6 || SPC5_PWM_USE_SMOD7
+#if SPC5_PWM_USE_FLEXPWM1
     /* Set Peripheral Clock.*/
     if (flexpwm_active_submodules1 == 1) {
       halSPCSetPeripheralClockMode(SPC5_FLEXPWM1_PCTL,
@@ -1136,7 +1142,7 @@ void pwm_lld_start(PWMDriver *pwmp) {
 #if SPC5_PWM_USE_SMOD0
     if (&PWMD1 == pwmp) {
       /* Disable the interrupts.*/
-      pwmp->flexpwmp->SUB[0].INTEN.R = 0x0000;
+      pwmp->flexpwmp->SUB[0].INTEN.R = 0;
 
       /* Disable the submodule.*/
       pwmp->flexpwmp->OUTEN.B.PWMA_EN &= 0xE;
@@ -1154,7 +1160,7 @@ void pwm_lld_start(PWMDriver *pwmp) {
 #if SPC5_PWM_USE_SMOD1
     if (&PWMD2 == pwmp) {
       /* Disable the interrupts.*/
-      pwmp->flexpwmp->SUB[1].INTEN.R = 0x0000;
+      pwmp->flexpwmp->SUB[1].INTEN.R = 0;
 
       /* Disable the submodule.*/
       pwmp->flexpwmp->OUTEN.B.PWMA_EN &= 0xD;
@@ -1172,7 +1178,7 @@ void pwm_lld_start(PWMDriver *pwmp) {
 #if SPC5_PWM_USE_SMOD2
     if (&PWMD3 == pwmp) {
       /* Disable the interrupts.*/
-      pwmp->flexpwmp->SUB[2].INTEN.R = 0x0000;
+      pwmp->flexpwmp->SUB[2].INTEN.R = 0;
 
       /* Disable the submodule.*/
       pwmp->flexpwmp->OUTEN.B.PWMA_EN &= 0xB;
@@ -1190,7 +1196,7 @@ void pwm_lld_start(PWMDriver *pwmp) {
 #if SPC5_PWM_USE_SMOD3
     if (&PWMD4 == pwmp) {
       /* Disable the interrupts.*/
-      pwmp->flexpwmp->SUB[3].INTEN.R = 0x0000;
+      pwmp->flexpwmp->SUB[3].INTEN.R = 0;
 
       /* Disable the submodule.*/
       pwmp->flexpwmp->OUTEN.B.PWMA_EN &= 0x7;
@@ -1208,7 +1214,7 @@ void pwm_lld_start(PWMDriver *pwmp) {
 #if SPC5_PWM_USE_SMOD4
     if (&PWMD5 == pwmp) {
       /* Disable the interrupts.*/
-      pwmp->flexpwmp->SUB[0].INTEN.R = 0x0000;
+      pwmp->flexpwmp->SUB[0].INTEN.R = 0;
 
       /* Disable the submodule.*/
       pwmp->flexpwmp->OUTEN.B.PWMA_EN &= 0xE;
@@ -1226,7 +1232,7 @@ void pwm_lld_start(PWMDriver *pwmp) {
 #if SPC5_PWM_USE_SMOD5
     if (&PWMD6 == pwmp) {
       /* Disable the interrupts.*/
-      pwmp->flexpwmp->SUB[1].INTEN.R = 0x0000;
+      pwmp->flexpwmp->SUB[1].INTEN.R = 0;
 
       /* Disable the submodule.*/
       pwmp->flexpwmp->OUTEN.B.PWMA_EN &= 0xD;
@@ -1244,7 +1250,7 @@ void pwm_lld_start(PWMDriver *pwmp) {
 #if SPC5_PWM_USE_SMOD6
     if (&PWMD7 == pwmp) {
       /* Disable the interrupts.*/
-      pwmp->flexpwmp->SUB[2].INTEN.R = 0x0000;
+      pwmp->flexpwmp->SUB[2].INTEN.R = 0;
 
       /* Disable the submodule.*/
       pwmp->flexpwmp->OUTEN.B.PWMA_EN &= 0xB;
@@ -1262,7 +1268,7 @@ void pwm_lld_start(PWMDriver *pwmp) {
 #if SPC5_PWM_USE_SMOD7
     if (&PWMD8 == pwmp) {
       /* Disable the interrupts.*/
-      pwmp->flexpwmp->SUB[3].INTEN.R = 0x0000;
+      pwmp->flexpwmp->SUB[3].INTEN.R = 0;
 
       /* Disable the submodule.*/
       pwmp->flexpwmp->OUTEN.B.PWMA_EN &= 0x7;
@@ -1349,7 +1355,7 @@ void pwm_lld_stop(PWMDriver *pwmp) {
     if (&PWMD1 == pwmp) {
       /* SMOD stop.*/
       pwmp->flexpwmp->MCTRL.B.CLDOK |= 1U;
-      pwmp->flexpwmp->SUB[0].INTEN.R = 0x0000;
+      pwmp->flexpwmp->SUB[0].INTEN.R = 0;
       pwmp->flexpwmp->SUB[0].STS.R = 0xFFFF;
       pwmp->flexpwmp->OUTEN.B.PWMA_EN &= 0xE;
       pwmp->flexpwmp->OUTEN.B.PWMB_EN &= 0xE;
@@ -1361,7 +1367,7 @@ void pwm_lld_stop(PWMDriver *pwmp) {
     if (&PWMD2 == pwmp) {
       /* SMOD stop.*/
       pwmp->flexpwmp->MCTRL.B.CLDOK |= 2U;
-      pwmp->flexpwmp->SUB[1].INTEN.R = 0x0000;
+      pwmp->flexpwmp->SUB[1].INTEN.R = 0;
       pwmp->flexpwmp->SUB[1].STS.R = 0xFFFF;
       pwmp->flexpwmp->OUTEN.B.PWMA_EN &= 0xD;
       pwmp->flexpwmp->OUTEN.B.PWMB_EN &= 0xD;
@@ -1373,7 +1379,7 @@ void pwm_lld_stop(PWMDriver *pwmp) {
     if (&PWMD3 == pwmp) {
       /* SMOD stop.*/
       pwmp->flexpwmp->MCTRL.B.CLDOK |= 4U;
-      pwmp->flexpwmp->SUB[2].INTEN.R = 0x0000;
+      pwmp->flexpwmp->SUB[2].INTEN.R = 0;
       pwmp->flexpwmp->SUB[2].STS.R = 0xFFFF;
       pwmp->flexpwmp->OUTEN.B.PWMA_EN &= 0xB;
       pwmp->flexpwmp->OUTEN.B.PWMB_EN &= 0xB;
@@ -1385,7 +1391,7 @@ void pwm_lld_stop(PWMDriver *pwmp) {
     if (&PWMD4 == pwmp) {
       /* SMOD stop.*/
       pwmp->flexpwmp->MCTRL.B.CLDOK |= 8U;
-      pwmp->flexpwmp->SUB[3].INTEN.R = 0x0000;
+      pwmp->flexpwmp->SUB[3].INTEN.R = 0;
       pwmp->flexpwmp->SUB[3].STS.R = 0xFFFF;
       pwmp->flexpwmp->OUTEN.B.PWMA_EN &= 0x7;
       pwmp->flexpwmp->OUTEN.B.PWMB_EN &= 0x7;
@@ -1397,7 +1403,7 @@ void pwm_lld_stop(PWMDriver *pwmp) {
     if (&PWMD5 == pwmp) {
       /* SMOD stop.*/
       pwmp->flexpwmp->MCTRL.B.CLDOK |= 1U;
-      pwmp->flexpwmp->SUB[0].INTEN.R = 0x0000;
+      pwmp->flexpwmp->SUB[0].INTEN.R = 0;
       pwmp->flexpwmp->SUB[0].STS.R = 0xFFFF;
       pwmp->flexpwmp->OUTEN.B.PWMA_EN &= 0xE;
       pwmp->flexpwmp->OUTEN.B.PWMB_EN &= 0xE;
@@ -1409,7 +1415,7 @@ void pwm_lld_stop(PWMDriver *pwmp) {
     if (&PWMD6 == pwmp) {
       /* SMOD stop.*/
       pwmp->flexpwmp->MCTRL.B.CLDOK |= 2U;
-      pwmp->flexpwmp->SUB[1].INTEN.R = 0x0000;
+      pwmp->flexpwmp->SUB[1].INTEN.R = 0;
       pwmp->flexpwmp->SUB[1].STS.R = 0xFFFF;
       pwmp->flexpwmp->OUTEN.B.PWMA_EN &= 0xD;
       pwmp->flexpwmp->OUTEN.B.PWMB_EN &= 0xD;
@@ -1421,7 +1427,7 @@ void pwm_lld_stop(PWMDriver *pwmp) {
     if (&PWMD7 == pwmp) {
       /* SMOD stop.*/
       pwmp->flexpwmp->MCTRL.B.CLDOK |= 4U;
-      pwmp->flexpwmp->SUB[2].INTEN.R = 0x0000;
+      pwmp->flexpwmp->SUB[2].INTEN.R = 0;
       pwmp->flexpwmp->SUB[2].STS.R = 0xFFFF;
       pwmp->flexpwmp->OUTEN.B.PWMA_EN &= 0xB;
       pwmp->flexpwmp->OUTEN.B.PWMB_EN &= 0xB;
@@ -1433,7 +1439,7 @@ void pwm_lld_stop(PWMDriver *pwmp) {
     if (&PWMD8 == pwmp) {
       /* SMOD stop.*/
       pwmp->flexpwmp->MCTRL.B.CLDOK |= 8U;
-      pwmp->flexpwmp->SUB[3].INTEN.R = 0x0000;
+      pwmp->flexpwmp->SUB[3].INTEN.R = 0;
       pwmp->flexpwmp->SUB[3].STS.R = 0xFFFF;
       pwmp->flexpwmp->OUTEN.B.PWMA_EN &= 0x7;
       pwmp->flexpwmp->OUTEN.B.PWMB_EN &= 0x7;
@@ -1442,8 +1448,7 @@ void pwm_lld_stop(PWMDriver *pwmp) {
     }
 #endif
 
-#if SPC5_PWM_USE_SMOD0 || SPC5_PWM_USE_SMOD1 ||                             \
-    SPC5_PWM_USE_SMOD2 || SPC5_PWM_USE_SMOD3
+#if SPC5_PWM_USE_FLEXPWM0
     /* Disable peripheral clock if there is not an activated module.*/
     if (flexpwm_active_submodules0 == 0) {
       halSPCSetPeripheralClockMode(SPC5_FLEXPWM0_PCTL,
@@ -1451,8 +1456,7 @@ void pwm_lld_stop(PWMDriver *pwmp) {
     }
 #endif
 
-#if SPC5_PWM_USE_SMOD4 || SPC5_PWM_USE_SMOD5 ||                             \
-    SPC5_PWM_USE_SMOD6 || SPC5_PWM_USE_SMOD7
+#if SPC5_PWM_USE_FLEXPWM1
     /* Disable peripheral clock if there is not an activated module.*/
     if (flexpwm_active_submodules1 == 0) {
       halSPCSetPeripheralClockMode(SPC5_FLEXPWM1_PCTL,
@@ -1602,7 +1606,7 @@ void pwm_lld_change_period(PWMDriver *pwmp, pwmcnt_t period) {
 
     /* Setting PWM period.*/
     pwmp->flexpwmp->SUB[0].INIT.R = ~(pwmperiod / 2) + 1U;
-    pwmp->flexpwmp->SUB[0].VAL[0].R = 0x0000;
+    pwmp->flexpwmp->SUB[0].VAL[0].R = 0;
     pwmp->flexpwmp->SUB[0].VAL[1].R = pwmperiod / 2;
 
     switch (pwmp->config->mode & PWM_OUTPUT_MASK) {
@@ -1624,7 +1628,7 @@ void pwm_lld_change_period(PWMDriver *pwmp, pwmcnt_t period) {
 
     /* Setting PWM period.*/
     pwmp->flexpwmp->SUB[1].INIT.R = ~(pwmperiod / 2) + 1U;
-    pwmp->flexpwmp->SUB[1].VAL[0].R = 0x0000;
+    pwmp->flexpwmp->SUB[1].VAL[0].R = 0;
     pwmp->flexpwmp->SUB[1].VAL[1].R = pwmperiod / 2;
 
     switch (pwmp->config->mode & PWM_OUTPUT_MASK) {
@@ -1646,7 +1650,7 @@ void pwm_lld_change_period(PWMDriver *pwmp, pwmcnt_t period) {
 
     /* Setting PWM period.*/
     pwmp->flexpwmp->SUB[2].INIT.R = ~(pwmperiod / 2) + 1U;
-    pwmp->flexpwmp->SUB[2].VAL[0].R = 0x0000;
+    pwmp->flexpwmp->SUB[2].VAL[0].R = 0;
     pwmp->flexpwmp->SUB[2].VAL[1].R = pwmperiod / 2;
 
     switch (pwmp->config->mode & PWM_OUTPUT_MASK) {
@@ -1668,7 +1672,7 @@ void pwm_lld_change_period(PWMDriver *pwmp, pwmcnt_t period) {
 
     /* Setting PWM period.*/
     pwmp->flexpwmp->SUB[3].INIT.R = ~(pwmperiod / 2) + 1U;
-    pwmp->flexpwmp->SUB[3].VAL[0].R = 0x0000;
+    pwmp->flexpwmp->SUB[3].VAL[0].R = 0;
     pwmp->flexpwmp->SUB[3].VAL[1].R = pwmperiod / 2;
 
     switch (pwmp->config->mode & PWM_OUTPUT_MASK) {
@@ -1689,12 +1693,11 @@ void pwm_lld_change_period(PWMDriver *pwmp, pwmcnt_t period) {
 
     /* Setting PWM period.*/
     pwmp->flexpwmp->SUB[0].INIT.R = ~(pwmperiod / 2) + 1U;
-    pwmp->flexpwmp->SUB[0].VAL[0].R = 0x0000;
+    pwmp->flexpwmp->SUB[0].VAL[0].R = 0;
     pwmp->flexpwmp->SUB[0].VAL[1].R = pwmperiod / 2;
 
     switch (pwmp->config->mode & PWM_OUTPUT_MASK) {
     case EDGE_ALIGNED_PWM:
-
       /* Setting active front of PWM channels.*/
       pwmp->flexpwmp->SUB[0].VAL[2].R = ~(pwmperiod / 2) + 1U;
       pwmp->flexpwmp->SUB[0].VAL[4].R = ~(pwmperiod / 2) + 1U;
@@ -1711,12 +1714,11 @@ void pwm_lld_change_period(PWMDriver *pwmp, pwmcnt_t period) {
 
     /* Setting PWM period.*/
     pwmp->flexpwmp->SUB[1].INIT.R = ~(pwmperiod / 2) + 1U;
-    pwmp->flexpwmp->SUB[1].VAL[0].R = 0x0000;
+    pwmp->flexpwmp->SUB[1].VAL[0].R = 0;
     pwmp->flexpwmp->SUB[1].VAL[1].R = pwmperiod / 2;
 
     switch (pwmp->config->mode & PWM_OUTPUT_MASK) {
     case EDGE_ALIGNED_PWM:
-
       /* Setting active front of PWM channels.*/
       pwmp->flexpwmp->SUB[1].VAL[2].R = ~(pwmperiod / 2) + 1U;
       pwmp->flexpwmp->SUB[1].VAL[4].R = ~(pwmperiod / 2) + 1U;
@@ -1733,12 +1735,11 @@ void pwm_lld_change_period(PWMDriver *pwmp, pwmcnt_t period) {
 
     /* Setting PWM period.*/
     pwmp->flexpwmp->SUB[2].INIT.R = ~(pwmperiod / 2) + 1U;
-    pwmp->flexpwmp->SUB[2].VAL[0].R = 0x0000;
+    pwmp->flexpwmp->SUB[2].VAL[0].R = 0;
     pwmp->flexpwmp->SUB[2].VAL[1].R = pwmperiod / 2;
 
     switch (pwmp->config->mode & PWM_OUTPUT_MASK) {
     case EDGE_ALIGNED_PWM:
-
       /* Setting active front of PWM channels.*/
       pwmp->flexpwmp->SUB[2].VAL[2].R = ~(pwmperiod / 2) + 1U;
       pwmp->flexpwmp->SUB[2].VAL[4].R = ~(pwmperiod / 2) + 1U;
@@ -1755,7 +1756,7 @@ void pwm_lld_change_period(PWMDriver *pwmp, pwmcnt_t period) {
 
     /* Setting PWM period.*/
     pwmp->flexpwmp->SUB[3].INIT.R = ~(pwmperiod / 2) + 1U;
-    pwmp->flexpwmp->SUB[3].VAL[0].R = 0x0000;
+    pwmp->flexpwmp->SUB[3].VAL[0].R = 0;
     pwmp->flexpwmp->SUB[3].VAL[1].R = pwmperiod / 2;
 
     switch (pwmp->config->mode & PWM_OUTPUT_MASK) {

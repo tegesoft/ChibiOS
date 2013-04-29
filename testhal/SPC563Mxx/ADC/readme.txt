@@ -2,12 +2,14 @@
 ** ChibiOS/RT HAL - ADC driver demo for SPC563Mxx.                         **
 *****************************************************************************
 
+** TARGET **
+
 The demo runs on an STMicroelectronics SPC563Mxx microcontroller installed on 
 XPC56xx EVB Motherboard.
 
 ** The Demo **
 
-The application demonstrates the use of the SPC560Pxx ADC driver.
+The application demonstrates the use of the SPC563Mxx ADC driver.
 
 ** Board Setup **
 

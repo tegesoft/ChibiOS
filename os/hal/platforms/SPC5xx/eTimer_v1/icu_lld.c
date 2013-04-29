@@ -1,20 +1,22 @@
 /*
- * Licensed under ST Liberty SW License Agreement V2, (the "License");
- * You may not use this file except in compliance with the License.
- * You may obtain a copy of the License at:
- *
- *        http://www.st.com/software_license_agreement_liberty_v2
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+    SPC5 HAL - Copyright (C) 2013 STMicroelectronics
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
 
 /**
  * @file    eTimer_v1/icu_lld.c
- * @brief   SPC5xx low level ICU driver header.
+ * @brief   SPC5xx low level ICU driver code.
  *
  * @addtogroup ICU
  * @{
@@ -35,7 +37,7 @@
 
 /**
  * @brief   ICUD1 driver identifier.
- * @note    The driver ICUD1 allocates the complex timer SMD0 when enabled.
+ * @note    The driver ICUD1 allocates the complex timer SMOD0 when enabled.
  */
 #if SPC5_ICU_USE_SMOD0 || defined(__DOXYGEN__)
 ICUDriver ICUD1;
@@ -43,7 +45,7 @@ ICUDriver ICUD1;
 
 /**
  * @brief   ICUD2 driver identifier.
- * @note    The driver ICUD2 allocates the complex timer SMD1 when enabled.
+ * @note    The driver ICUD2 allocates the complex timer SMOD1 when enabled.
  */
 #if SPC5_ICU_USE_SMOD1 || defined(__DOXYGEN__)
 ICUDriver ICUD2;
@@ -51,7 +53,7 @@ ICUDriver ICUD2;
 
 /**
  * @brief   ICUD3 driver identifier.
- * @note    The driver ICUD3 allocates the complex timer SMD2 when enabled.
+ * @note    The driver ICUD3 allocates the complex timer SMOD2 when enabled.
  */
 #if SPC5_ICU_USE_SMOD2 || defined(__DOXYGEN__)
 ICUDriver ICUD3;
@@ -59,15 +61,15 @@ ICUDriver ICUD3;
 
 /**
  * @brief   ICUD4 driver identifier.
- * @note    The driver ICUD4 allocates the complex timer SMD3 when enabled.
+ * @note    The driver ICUD4 allocates the complex timer SMOD3 when enabled.
  */
-#if SPC5_ICU_USE_SMD3 || defined(__DOXYGEN__)
+#if SPC5_ICU_USE_SMOD3 || defined(__DOXYGEN__)
 ICUDriver ICUD4;
 #endif
 
 /**
  * @brief   ICUD5 driver identifier.
- * @note    The driver ICUD5 allocates the complex timer SMD4 when enabled.
+ * @note    The driver ICUD5 allocates the complex timer SMOD4 when enabled.
  */
 #if SPC5_ICU_USE_SMOD4 || defined(__DOXYGEN__)
 ICUDriver ICUD5;
@@ -75,7 +77,7 @@ ICUDriver ICUD5;
 
 /**
  * @brief   ICUD6 driver identifier.
- * @note    The driver ICUD6 allocates the complex timer SMD5 when enabled.
+ * @note    The driver ICUD6 allocates the complex timer SMOD5 when enabled.
  */
 #if SPC5_ICU_USE_SMOD5 || defined(__DOXYGEN__)
 ICUDriver ICUD6;
@@ -83,7 +85,7 @@ ICUDriver ICUD6;
 
 /**
  * @brief   ICUD7 driver identifier.
- * @note    The driver ICUD7 allocates the complex timer SMD6 when enabled.
+ * @note    The driver ICUD7 allocates the complex timer SMOD6 when enabled.
  */
 #if SPC5_ICU_USE_SMOD6 || defined(__DOXYGEN__)
 ICUDriver ICUD7;
@@ -91,7 +93,7 @@ ICUDriver ICUD7;
 
 /**
  * @brief   ICUD8 driver identifier.
- * @note    The driver ICUD8 allocates the complex timer SMD7 when enabled.
+ * @note    The driver ICUD8 allocates the complex timer SMOD7 when enabled.
  */
 #if SPC5_ICU_USE_SMOD7 || defined(__DOXYGEN__)
 ICUDriver ICUD8;
@@ -99,7 +101,7 @@ ICUDriver ICUD8;
 
 /**
  * @brief   ICUD9 driver identifier.
- * @note    The driver ICUD9 allocates the complex timer SMD8 when enabled.
+ * @note    The driver ICUD9 allocates the complex timer SMOD8 when enabled.
  */
 #if SPC5_ICU_USE_SMOD8 || defined(__DOXYGEN__)
 ICUDriver ICUD9;
@@ -107,7 +109,7 @@ ICUDriver ICUD9;
 
 /**
  * @brief   ICUD10 driver identifier.
- * @note    The driver ICUD10 allocates the complex timer SMD9 when enabled.
+ * @note    The driver ICUD10 allocates the complex timer SMOD9 when enabled.
  */
 #if SPC5_ICU_USE_SMOD9 || defined(__DOXYGEN__)
 ICUDriver ICUD10;
@@ -115,7 +117,7 @@ ICUDriver ICUD10;
 
 /**
  * @brief   ICUD11 driver identifier.
- * @note    The driver ICUD11 allocates the complex timer SMD10 when enabled.
+ * @note    The driver ICUD11 allocates the complex timer SMOD10 when enabled.
  */
 #if SPC5_ICU_USE_SMOD10 || defined(__DOXYGEN__)
 ICUDriver ICUD11;
@@ -123,7 +125,7 @@ ICUDriver ICUD11;
 
 /**
  * @brief   ICUD12 driver identifier.
- * @note    The driver ICUD12 allocates the complex timer SMD11 when enabled.
+ * @note    The driver ICUD12 allocates the complex timer SMOD11 when enabled.
  */
 #if SPC5_ICU_USE_SMOD11 || defined(__DOXYGEN__)
 ICUDriver ICUD12;
@@ -131,7 +133,7 @@ ICUDriver ICUD12;
 
 /**
  * @brief   ICUD13 driver identifier.
- * @note    The driver ICUD13 allocates the complex timer SMD12 when enabled.
+ * @note    The driver ICUD13 allocates the complex timer SMOD12 when enabled.
  */
 #if SPC5_ICU_USE_SMOD12 || defined(__DOXYGEN__)
 ICUDriver ICUD13;
@@ -139,7 +141,7 @@ ICUDriver ICUD13;
 
 /**
  * @brief   ICUD14 driver identifier.
- * @note    The driver ICUD14 allocates the complex timer SMD13 when enabled.
+ * @note    The driver ICUD14 allocates the complex timer SMOD13 when enabled.
  */
 #if SPC5_ICU_USE_SMOD13 || defined(__DOXYGEN__)
 ICUDriver ICUD14;
@@ -147,7 +149,7 @@ ICUDriver ICUD14;
 
 /**
  * @brief   ICUD15 driver identifier.
- * @note    The driver ICUD15 allocates the complex timer SMD14 when enabled.
+ * @note    The driver ICUD15 allocates the complex timer SMOD14 when enabled.
  */
 #if SPC5_ICU_USE_SMOD14 || defined(__DOXYGEN__)
 ICUDriver ICUD15;
@@ -155,7 +157,7 @@ ICUDriver ICUD15;
 
 /**
  * @brief   ICUD16 driver identifier.
- * @note    The driver ICUD16 allocates the complex timer SMD15 when enabled.
+ * @note    The driver ICUD16 allocates the complex timer SMOD15 when enabled.
  */
 #if SPC5_ICU_USE_SMOD15 || defined(__DOXYGEN__)
 ICUDriver ICUD16;
@@ -163,7 +165,7 @@ ICUDriver ICUD16;
 
 /**
  * @brief   ICUD17 driver identifier.
- * @note    The driver ICUD17 allocates the complex timer SMD16 when enabled.
+ * @note    The driver ICUD17 allocates the complex timer SMOD16 when enabled.
  */
 #if SPC5_ICU_USE_SMOD16 || defined(__DOXYGEN__)
 ICUDriver ICUD17;
@@ -171,7 +173,7 @@ ICUDriver ICUD17;
 
 /**
  * @brief   ICUD18 driver identifier.
- * @note    The driver ICUD18 allocates the complex timer SMD17 when enabled.
+ * @note    The driver ICUD18 allocates the complex timer SMOD17 when enabled.
  */
 #if SPC5_ICU_USE_SMOD17 || defined(__DOXYGEN__)
 ICUDriver ICUD18;
@@ -187,6 +189,12 @@ ICUDriver ICUD18;
 static uint32_t icu_active_submodules0;
 static uint32_t icu_active_submodules1;
 static uint32_t icu_active_submodules2;
+
+/**
+ * @brief   Width and Period registers.
+ */
+uint16_t width;
+uint16_t period;
 
 /*===========================================================================*/
 /* Driver local functions.                                                   */
@@ -216,7 +224,12 @@ static void icu_lld_serve_interrupt(ICUDriver *icup) {
       }
       else {
         icup->etimerp->CHANNEL[icup->smod_number].STS.B.ICF1 = 1U;
-        icup->etimerp->CHANNEL[icup->smod_number].CNTR.R = 0x0000;
+        if (icup->etimerp->CHANNEL[icup->smod_number].CTRL3.B.C1FCNT == 2) {
+          period = icup->etimerp->CHANNEL[icup->smod_number].CAPT1.R;
+          period = icup->etimerp->CHANNEL[icup->smod_number].CAPT1.R;
+        } else {
+          period = icup->etimerp->CHANNEL[icup->smod_number].CAPT1.R;
+        }
         _icu_isr_invoke_period_cb(icup);
       }
     }
@@ -224,10 +237,16 @@ static void icu_lld_serve_interrupt(ICUDriver *icup) {
       if (icup->etimerp->CHANNEL[icup->smod_number].CTRL.B.CNTMODE ==
           SPC5_ETIMER_CNTMODE_RFE_SIHA) {
         icup->etimerp->CHANNEL[icup->smod_number].STS.B.ICF2 = 1U;
-        icup->etimerp->CHANNEL[icup->smod_number].CNTR.R = 0x0000;
+        icup->etimerp->CHANNEL[icup->smod_number].CNTR.R = 0;
       }
       else {
         icup->etimerp->CHANNEL[icup->smod_number].STS.B.ICF2 = 1U;
+        if (icup->etimerp->CHANNEL[icup->smod_number].CTRL3.B.C2FCNT == 2) {
+          width = icup->etimerp->CHANNEL[icup->smod_number].CAPT2.R;
+          width = icup->etimerp->CHANNEL[icup->smod_number].CAPT2.R;
+        } else {
+          width = icup->etimerp->CHANNEL[icup->smod_number].CAPT2.R;
+        }
         _icu_isr_invoke_width_cb(icup);
       }
     }
@@ -238,11 +257,22 @@ static void icu_lld_serve_interrupt(ICUDriver *icup) {
     }
     if ((sr & 0x0040) != 0) { /* ICF1 */
       icup->etimerp->CHANNEL[icup->smod_number].STS.B.ICF1 = 1U;
-      icup->etimerp->CHANNEL[icup->smod_number].CNTR.R = 0x0000;
+      if (icup->etimerp->CHANNEL[icup->smod_number].CTRL3.B.C1FCNT == 2) {
+        period = icup->etimerp->CHANNEL[icup->smod_number].CAPT1.R;
+        period = icup->etimerp->CHANNEL[icup->smod_number].CAPT1.R;
+      } else {
+        period = icup->etimerp->CHANNEL[icup->smod_number].CAPT1.R;
+      }
       _icu_isr_invoke_period_cb(icup);
     }
     else if ((sr & 0x0080) != 0) { /* ICF2 */
       icup->etimerp->CHANNEL[icup->smod_number].STS.B.ICF2 = 1U;
+      if (icup->etimerp->CHANNEL[icup->smod_number].CTRL3.B.C2FCNT == 2) {
+        width = icup->etimerp->CHANNEL[icup->smod_number].CAPT2.R;
+        width = icup->etimerp->CHANNEL[icup->smod_number].CAPT2.R;
+      } else {
+        width = icup->etimerp->CHANNEL[icup->smod_number].CAPT2.R;
+      }
       _icu_isr_invoke_width_cb(icup);
     }
   } /* ICU_SKIP_FIRST_CAPTURE = FALSE */
@@ -307,28 +337,28 @@ static void spc5_icu_smod_init(ICUDriver *icup) {
   icup->etimerp->CHANNEL[icup->smod_number].CTRL2.B.PIPS = 0U;
 
   /* Set secondary source.*/
-  switch (icup->config->channel) {
-  case ICU_CHANNEL_1:
+  switch (icup->smod_number) {
+  case 0:
     icup->etimerp->CHANNEL[icup->smod_number].CTRL.B.SECSRC =
         SPC5_ETIMER_COUNTER_0_INPUT_PIN;
     break;
-  case ICU_CHANNEL_2:
+  case 1:
     icup->etimerp->CHANNEL[icup->smod_number].CTRL.B.SECSRC =
         SPC5_ETIMER_COUNTER_1_INPUT_PIN;
     break;
-  case ICU_CHANNEL_3:
+  case 2:
     icup->etimerp->CHANNEL[icup->smod_number].CTRL.B.SECSRC =
         SPC5_ETIMER_COUNTER_2_INPUT_PIN;
     break;
-  case ICU_CHANNEL_4:
+  case 3:
     icup->etimerp->CHANNEL[icup->smod_number].CTRL.B.SECSRC =
         SPC5_ETIMER_COUNTER_3_INPUT_PIN;
     break;
-  case ICU_CHANNEL_5:
+  case 4:
     icup->etimerp->CHANNEL[icup->smod_number].CTRL.B.SECSRC =
         SPC5_ETIMER_COUNTER_4_INPUT_PIN;
     break;
-  case ICU_CHANNEL_6:
+  case 5:
     icup->etimerp->CHANNEL[icup->smod_number].CTRL.B.SECSRC =
         SPC5_ETIMER_COUNTER_5_INPUT_PIN;
     break;
@@ -344,8 +374,8 @@ static void spc5_icu_smod_init(ICUDriver *icup) {
 
   /* Direct pointers to the capture registers in order to make reading
    data faster from within callbacks.*/
-  icup->pccrp = &icup->etimerp->CHANNEL[icup->smod_number].CAPT1.R;
-  icup->wccrp = &icup->etimerp->CHANNEL[icup->smod_number].CAPT2.R;
+  icup->pccrp = &period;
+  icup->wccrp = &width;
 
   /* Enable channel.*/
   icup->etimerp->ENBL.B.ENBL |= 1U << (icup->smod_number);
@@ -761,9 +791,13 @@ CH_IRQ_HANDLER(SPC5_ETIMER2_TC5IR_HANDLER) {
  */
 void icu_lld_init(void) {
   /* Submodules initially all not in use.*/
-    icu_active_submodules0 = 0;
-    icu_active_submodules1 = 0;
-    icu_active_submodules2 = 0;
+  icu_active_submodules0 = 0;
+  icu_active_submodules1 = 0;
+  icu_active_submodules2 = 0;
+
+  /* Reset width and period registers.*/
+  width = 0;
+  period = 0;
 
 #if SPC5_ICU_USE_SMOD0
   /* Driver initialization.*/
@@ -891,9 +925,7 @@ void icu_lld_init(void) {
   ICUD18.smod_number = 5U;
 #endif
 
-#if SPC5_ICU_USE_SMOD0 || SPC5_ICU_USE_SMOD1 ||								\
-  SPC5_ICU_USE_SMOD2 || SPC5_ICU_USE_SMOD3 ||								\
-  SPC5_ICU_USE_SMOD4 || SPC5_ICU_USE_SMOD5
+#if SPC5_ICU_USE_ETIMER0
 
   INTC.PSR[SPC5_ETIMER0_TC0IR_NUMBER].R = SPC5_ICU_ETIMER0_PRIORITY;
   INTC.PSR[SPC5_ETIMER0_TC1IR_NUMBER].R = SPC5_ICU_ETIMER0_PRIORITY;
@@ -906,9 +938,7 @@ void icu_lld_init(void) {
 
 #endif
 
-#if SPC5_ICU_USE_SMOD6 || SPC5_ICU_USE_SMOD7 ||								\
-  SPC5_ICU_USE_SMOD8 || SPC5_ICU_USE_SMOD9 ||								\
-  SPC5_ICU_USE_SMOD10 || SPC5_ICU_USE_SMOD11
+#if SPC5_ICU_USE_ETIMER1
 
   INTC.PSR[SPC5_ETIMER1_TC0IR_NUMBER].R = SPC5_ICU_ETIMER1_PRIORITY;
   INTC.PSR[SPC5_ETIMER1_TC1IR_NUMBER].R = SPC5_ICU_ETIMER1_PRIORITY;
@@ -920,9 +950,7 @@ void icu_lld_init(void) {
 
 #endif
 
-#if SPC5_ICU_USE_SMOD12 || SPC5_ICU_USE_SMOD13 ||                           \
-  SPC5_ICU_USE_SMOD14 || SPC5_ICU_USE_SMOD15 ||                             \
-  SPC5_ICU_USE_SMOD16 || SPC5_ICU_USE_SMOD17
+#if SPC5_ICU_USE_ETIMER2
 
   INTC.PSR[SPC5_ETIMER2_TC0IR_NUMBER].R = SPC5_ICU_ETIMER2_PRIORITY;
   INTC.PSR[SPC5_ETIMER2_TC1IR_NUMBER].R = SPC5_ICU_ETIMER2_PRIORITY;
@@ -944,20 +972,12 @@ void icu_lld_init(void) {
  */
 void icu_lld_start(ICUDriver *icup) {
 
-  chDbgAssert((icup->config->channel == ICU_CHANNEL_1) ||
-              (icup->config->channel == ICU_CHANNEL_2) ||
-              (icup->config->channel == ICU_CHANNEL_3) ||
-              (icup->config->channel == ICU_CHANNEL_4) ||
-              (icup->config->channel == ICU_CHANNEL_5) ||
-              (icup->config->channel == ICU_CHANNEL_6),
-             "icu_lld_start(), #1", "invalid input");
-
   chDbgAssert(icu_active_submodules0 < 6, "icu_lld_start(), #1",
               "too many submodules");
   chDbgAssert(icu_active_submodules1 < 6, "icu_lld_start(), #1",
-                "too many submodules");
+              "too many submodules");
   chDbgAssert(icu_active_submodules2 < 6, "icu_lld_start(), #1",
-                "too many submodules");
+              "too many submodules");
 
   if (icup->state == ICU_STOP) {
 #if SPC5_ICU_USE_SMOD0
@@ -1034,8 +1054,7 @@ void icu_lld_start(ICUDriver *icup) {
 #endif
 
     /* Set eTimer0 Clock.*/
-#if SPC5_ICU_USE_SMOD0 || SPC5_ICU_USE_SMOD1 || SPC5_ICU_USE_SMOD2 ||       \
-    SPC5_ICU_USE_SMOD3 || SPC5_ICU_USE_SMOD4 || SPC5_ICU_USE_SMOD5
+#if SPC5_ICU_USE_ETIMER0
 
     /* If this is the first Submodule activated then the eTimer0 is enabled.*/
     if (icu_active_submodules0 == 1) {
@@ -1043,18 +1062,18 @@ void icu_lld_start(ICUDriver *icup) {
                                    SPC5_ICU_ETIMER0_START_PCTL);
     }
 #endif
+
     /* Set eTimer1 Clock.*/
-#if SPC5_ICU_USE_SMOD6 || SPC5_ICU_USE_SMOD7 || SPC5_ICU_USE_SMOD8 ||       \
-    SPC5_ICU_USE_SMOD9 || SPC5_ICU_USE_SMOD10 || SPC5_ICU_USE_SMOD11
+#if SPC5_ICU_USE_ETIMER1
     /* If this is the first Submodule activated then the eTimer1 is enabled.*/
     if (icu_active_submodules1 == 1) {
       halSPCSetPeripheralClockMode(SPC5_ETIMER1_PCTL,
                                    SPC5_ICU_ETIMER1_START_PCTL);
     }
 #endif
+
     /* Set eTimer2 Clock.*/
-#if SPC5_ICU_USE_SMOD12 || SPC5_ICU_USE_SMOD13 || SPC5_ICU_USE_SMOD14 ||    \
-    SPC5_ICU_USE_SMOD15 || SPC5_ICU_USE_SMOD16 || SPC5_ICU_USE_SMOD17
+#if SPC5_ICU_USE_ETIMER2
     /* If this is the first Submodule activated then the eTimer2 is enabled.*/
     if (icu_active_submodules2 == 1) {
       halSPCSetPeripheralClockMode(SPC5_ETIMER2_PCTL,
@@ -1072,17 +1091,13 @@ void icu_lld_start(ICUDriver *icup) {
     /* All IRQs and DMA requests disabled.*/
     icup->etimerp->CHANNEL[icup->smod_number].INTDMA.R = 0U;
 
-    /* Compare Load 1 disabled.*/
+    /* Compare Load 1 and Compare Load 2 disabled.*/
     icup->etimerp->CHANNEL[icup->smod_number].CCCTRL.B.CLC1 = 0U;
-
-    /* Compare Load 2 disabled.*/
     icup->etimerp->CHANNEL[icup->smod_number].CCCTRL.B.CLC2 = 0U;
 
-    /* Capture 1 disabled.*/
+    /* Capture 1 and Capture 2 disabled.*/
     icup->etimerp->CHANNEL[icup->smod_number].CCCTRL.B.CPT1MODE =
         SPC5_ETIMER_CPT1MODE_DISABLED;
-
-    /* Capture 2 disabled.*/
     icup->etimerp->CHANNEL[icup->smod_number].CCCTRL.B.CPT2MODE =
         SPC5_ETIMER_CPT2MODE_DISABLED;
 
@@ -1238,33 +1253,32 @@ void icu_lld_stop(ICUDriver *icup) {
     }
 #endif
     /* eTimer0 clock deactivation.*/
-#if SPC5_ICU_USE_SMOD0 || SPC5_ICU_USE_SMOD1 || SPC5_ICU_USE_SMOD2 ||       \
-    SPC5_ICU_USE_SMOD3 || SPC5_ICU_USE_SMOD4 || SPC5_ICU_USE_SMOD5
+#if SPC5_ICU_USE_ETIMER0
     /* If it is the last active submodules then the eTimer0 is disabled.*/
     if (icu_active_submodules0 == 0) {
-      if (icup->etimerp->ENBL.B.ENBL == 0x00) {
+      if (icup->etimerp->ENBL.B.ENBL == 0) {
         halSPCSetPeripheralClockMode(SPC5_ETIMER0_PCTL,
                                      SPC5_ICU_ETIMER0_STOP_PCTL);
       }
     }
 #endif
+
     /* eTimer1 clock deactivation.*/
-#if SPC5_ICU_USE_SMOD6 || SPC5_ICU_USE_SMOD7 || SPC5_ICU_USE_SMOD8 ||       \
-    SPC5_ICU_USE_SMOD9 || SPC5_ICU_USE_SMOD10 || SPC5_ICU_USE_SMOD11
+#if SPC5_ICU_USE_ETIMER1
     /* If it is the last active submodules then the eTimer1 is disabled.*/
     if (icu_active_submodules1 == 0) {
-      if (icup->etimerp->ENBL.B.ENBL == 0x00) {
+      if (icup->etimerp->ENBL.B.ENBL == 0) {
         halSPCSetPeripheralClockMode(SPC5_ETIMER1_PCTL,
                                      SPC5_ICU_ETIMER1_STOP_PCTL);
       }
     }
 #endif
+
     /* eTimer2 clock deactivation.*/
-#if SPC5_ICU_USE_SMOD12 || SPC5_ICU_USE_SMOD13 || SPC5_ICU_USE_SMOD14 ||    \
-    SPC5_ICU_USE_SMOD15 || SPC5_ICU_USE_SMOD16 || SPC5_ICU_USE_SMOD17
+#if SPC5_ICU_USE_ETIMER2
     /* If it is the last active submodules then the eTimer2 is disabled.*/
     if (icu_active_submodules2 == 0) {
-      if (icup->etimerp->ENBL.B.ENBL == 0x00) {
+      if (icup->etimerp->ENBL.B.ENBL == 0) {
         halSPCSetPeripheralClockMode(SPC5_ETIMER2_PCTL,
                                      SPC5_ICU_ETIMER2_STOP_PCTL);
       }
@@ -1288,6 +1302,8 @@ void icu_lld_enable(ICUDriver *icup) {
   /* Set Capture 1 and Capture 2 Mode.*/
   icup->etimerp->CHANNEL[icup->smod_number].CCCTRL.B.CPT1MODE =
       SPC5_ETIMER_CPT1MODE_RISING_EDGE;
+  icup->etimerp->CHANNEL[icup->smod_number].CTRL3.B.ROC =
+      SPC5_ETIMER_ROC_REL_ON_CAP1;
   icup->etimerp->CHANNEL[icup->smod_number].CCCTRL.B.CPT2MODE =
       SPC5_ETIMER_CPT2MODE_FALLING_EDGE;
 
