@@ -56,7 +56,6 @@ set(CHIBIOS_SRC
     ${CHIBIOS_ROOT}/os/hal/include/spi.h
     ${CHIBIOS_ROOT}/os/hal/include/tm.h
     ${CHIBIOS_ROOT}/os/hal/include/uart.h
-    ${CHIBIOS_ROOT}/os/hal/include/usb_cdc.h
     ${CHIBIOS_ROOT}/os/hal/include/usb.h
 
     ${CHIBIOS_ROOT}/os/hal/src/adc.c
