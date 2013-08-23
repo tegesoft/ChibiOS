@@ -45,6 +45,8 @@
 
 /**
  * @brief   Initializes the backup domain.
+ * @note    WARNING! Changing clock source impossible without resetting
+ *          of the whole BKP domain.
  */
 static void hal_lld_backup_domain_init(void) {
 
@@ -58,14 +60,13 @@ static void hal_lld_backup_domain_init(void) {
     RCC->BDCR = 0;
   }
 
-  /* If enabled then the LSE is started.*/
 #if STM32_LSE_ENABLED
   RCC->BDCR |= RCC_BDCR_LSEON;
   while ((RCC->BDCR & RCC_BDCR_LSERDY) == 0)
-    ;                                     /* Waits until LSE is stable.   */
+    ;                                       /* Waits until LSE is stable.   */
 #endif
 
-#if STM32_RTCSEL != STM32_RTCSEL_NOCLOCK
+#if HAL_USE_RTC
   /* If the backup domain hasn't been initialized yet then proceed with
      initialization.*/
   if ((RCC->BDCR & RCC_BDCR_RTCEN) == 0) {
@@ -75,7 +76,17 @@ static void hal_lld_backup_domain_init(void) {
     /* RTC clock enabled.*/
     RCC->BDCR |= RCC_BDCR_RTCEN;
   }
-#endif /* STM32_RTCSEL != STM32_RTCSEL_NOCLOCK */
+#endif /* HAL_USE_RTC */
+
+#if STM32_BKPRAM_ENABLE
+  rccEnableBKPSRAM(false);
+
+  PWR->CSR |= PWR_CSR_BRE;
+  while ((PWR->CSR & PWR_CSR_BRR) == 0)
+    ;                                /* Waits until the regulator is stable */
+#else
+  PWR->CSR &= ~PWR_CSR_BRE;
+#endif /* STM32_BKPRAM_ENABLE */
 }
 
 /*===========================================================================*/
@@ -95,11 +106,10 @@ void hal_lld_init(void) {
 
   /* Reset of all peripherals. AHB3 is not reseted because it could have
      been initialized in the board initialization file (board.c).*/
-  rccResetAHB1(!0);
-  rccResetAHB2(!0);
-  rccResetAHB3(!0);
-  rccResetAPB1(!RCC_APB1RSTR_PWRRST);
-  rccResetAPB2(!0);
+  rccResetAHB1(~0);
+  rccResetAHB2(~0);
+  rccResetAPB1(~RCC_APB1RSTR_PWRRST);
+  rccResetAPB2(~0);
 
   /* SysTick initialization using the system clock.*/
   SysTick->LOAD = STM32_HCLK / CH_FREQUENCY - 1;
@@ -174,17 +184,6 @@ void stm32_clock_init(void) {
   RCC->CSR |= RCC_CSR_LSION;
   while ((RCC->CSR & RCC_CSR_LSIRDY) == 0)
     ;                           /* Waits until LSI is stable.               */
-#endif
-
-#if STM32_LSE_ENABLED
-  /* LSE activation, have to unlock the register.*/
-  if ((RCC->BDCR & RCC_BDCR_LSEON) == 0) {
-    PWR->CR |= PWR_CR_DBP;
-    RCC->BDCR |= RCC_BDCR_LSEON;
-    PWR->CR &= ~PWR_CR_DBP;
-  }
-  while ((RCC->BDCR & RCC_BDCR_LSERDY) == 0)
-    ;                           /* Waits until LSE is stable.               */
 #endif
 
 #if STM32_ACTIVATE_PLL

@@ -153,7 +153,7 @@
 
 /**
  * @brief   Flash buffer and prefetching settings.
- * @note    Please refer to the SPC563M64 reference manual about the meaning
+ * @note    Please refer to the SPC564Axx reference manual about the meaning
  *          of the following bits, if in doubt DO NOT MODIFY IT.
  * @note    Do not specify the APC, WWSC, RWSC bits in this value because
  *          those are calculated from the system clock and ORed with this
@@ -167,6 +167,13 @@
                                              BIUCR_IPFEN |                  \
                                              BIUCR_PFLIM_ON_MISS |          \
                                              BIUCR_BFEN)
+#endif
+
+/**
+ * @brief   eMIOS global prescaler value.
+ */
+#if !defined(SPC5_EMIOS_GPRE_VALUE) || defined(__DOXYGEN__)
+#define SPC5_EMIOS_GPRE_VALUE               20
 #endif
 
 /*===========================================================================*/
@@ -191,6 +198,10 @@
 #if (SPC5_CLK_RFD != SPC5_RFD_DIV2) && (SPC5_CLK_RFD != SPC5_RFD_DIV4) &&   \
     (SPC5_CLK_RFD != SPC5_RFD_DIV8) && (SPC5_CLK_RFD != SPC5_RFD_DIV16)
 #error "invalid SPC5_CLK_RFD value specified"
+#endif
+
+#if (SPC5_EMIOS_GPRE_VALUE < 1) || (SPC5_EMIOS_GPRE_VALUE > 256)
+#error "invalid SPC5_EMIOS_GPRE_VALUE value specified"
 #endif
 
 /**
@@ -240,6 +251,20 @@
 #else
 #define SPC5_FLASH_WS       (BIUCR_APC_4 | BIUCR_RWSC_4 | BIUCR_WWSC_3)
 #endif
+
+/**
+ * @brief   RAM wait states are a function of the system clock.
+ */
+#if (SPC5_SYSCLK <= 98000000) || defined(__DOXYGEN__)
+#define SPC5_RAM_WS         0
+#else
+#define SPC5_RAM_WS         0x40000000
+#endif
+
+/**
+ * @brief   eMIOS global prescaler setting.
+ */
+#define SPC5_EMIOS_GPRE     (SPC5_EMIOS_GPRE_VALUE << 8)
 
 /*===========================================================================*/
 /* Driver data structures and types.                                         */

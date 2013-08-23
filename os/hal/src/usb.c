@@ -238,11 +238,14 @@ void usbInit(void) {
  * @init
  */
 void usbObjectInit(USBDriver *usbp) {
+  unsigned i;
 
   usbp->state        = USB_STOP;
   usbp->config       = NULL;
-  usbp->param        = NULL;
-  usbp->serial_param = NULL;
+  for (i = 0; i < USB_MAX_ENDPOINTS; i++) {
+    usbp->in_params[i]  = NULL;
+    usbp->out_params[i] = NULL;
+  }
   usbp->transmitting = 0;
   usbp->receiving    = 0;
 }

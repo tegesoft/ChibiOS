@@ -53,12 +53,6 @@
 void hal_lld_init(void) {
   uint32_t n;
 
-  /* FLASH wait states and prefetching setup.*/
-  FLASH_A.BIUCR.R  = SPC5_FLASH_BIUCR | SPC5_FLASH_WS;
-  FLASH_A.BIUCR2.R = 0;
-  FLASH_B.BIUCR.R  = SPC5_FLASH_BIUCR | SPC5_FLASH_WS;
-  FLASH_B.BIUCR2.R = 0;
-
   /* The SRAM is parked on the load/store port, for some unknown reason it
      is defaulted on the instructions port and this kills performance.*/
   XBAR.SGPCR2.B.PARK = 1;               /* RAM slave on load/store port.*/
@@ -66,6 +60,7 @@ void hal_lld_init(void) {
   /* The DMA priority is placed above the CPU priority in order to not
      starve I/O activities while the CPU is executing tight loops (FLASH
      and SRAM slave ports only).*/
+#if !defined(_SPC564A70_)
   XBAR.MPR0.R = 0x34000021;             /* Flash slave port priorities:
                                             eDMA (4):              0 (highest)
                                             Core Instructions (0): 1
@@ -78,26 +73,45 @@ void hal_lld_init(void) {
                                             Core Data (1):         2
                                             EBI (7):               3
                                             FlexRay (6):           4        */
+#else /* defined(_SPC564A70_) */
+  XBAR.MPR0.R = 0x03000021;             /* Flash slave port priorities:
+                                            eDMA (4):              0 (highest)
+                                            Core Instructions (0): 1
+                                            Core Data (1):         2
+                                            Flexray (6):           3        */
+  XBAR.MPR2.R = 0x03000021;             /* SRAM slave port priorities:
+                                            eDMA (4):              0 (highest)
+                                            Core Instructions (0): 1
+                                            Core Data (1):         2
+                                            FlexRay (6):           3        */
+#endif /* defined(_SPC564A70_) */
 
-  /* Downcounter timer initialized for system tick use, TB enabled for debug
-     and measurements.*/
+  /* Decrementer timer initialized for system tick use, note, it is
+     initialized here because in the OSAL layer the system clock frequency
+     is not yet known.*/
   n = SPC5_SYSCLK / CH_FREQUENCY;
-  asm volatile ("li      %%r3, 0            \t\n"
-                "mtspr   284, %%r3          \t\n"   /* Clear TBL register.  */
-                "mtspr   285, %%r3          \t\n"   /* Clear TBU register.  */
-                "mtspr   22, %[n]           \t\n"   /* Init. DEC register.  */
+  asm volatile ("mtspr   22, %[n]           \t\n"   /* Init. DEC register.  */
                 "mtspr   54, %[n]           \t\n"   /* Init. DECAR register.*/
-                "li      %%r3, 0x4000       \t\n"   /* TBEN bit.            */
-                "mtspr   1008, %%r3         \t\n"   /* HID0 register.       */
                 "lis     %%r3, 0x0440       \t\n"   /* DIE ARE bits.        */
                 "mtspr   340, %%r3"                 /* TCR register.        */
                 : : [n] "r" (n) : "r3");
+
+  /* TB counter enabled for debug and measurements.*/
+  asm volatile ("li      %%r3, 0x4000       \t\n"   /* TBEN bit.            */
+                "mtspr   1008, %%r3"                /* HID0 register.       */
+                : : : "r3");
 
   /* INTC initialization, software vector mode, 4 bytes vectors, starting
      at priority 0.*/
   INTC.MCR.R   = 0;
   INTC.CPR.R   = 0;
   INTC.IACKR.R = (uint32_t)_vectors;
+
+  /* eMIOS initialization.*/
+  EMIOS.MCR.R = (1U << 26) | SPC5_EMIOS_GPRE;       /* GPREN and GPRE.      */
+
+  /* EDMA initialization.*/
+  edmaInit();
 }
 
 /**
@@ -109,6 +123,16 @@ void hal_lld_init(void) {
  * @special
  */
 void spc_clock_init(void) {
+
+  /* Setting up RAM/Flash wait states and the prefetching bits.*/
+  ECSM.MUDCR.R = SPC5_RAM_WS;
+  FLASH_A.BIUCR.R  = SPC5_FLASH_BIUCR | SPC5_FLASH_WS;
+  FLASH_A.BIUCR2.R = 0;
+#if !defined(_SPC564A70_)
+  /* The second controller is only present in Andorra 3M or 4M.*/
+  FLASH_B.BIUCR.R  = SPC5_FLASH_BIUCR | SPC5_FLASH_WS;
+  FLASH_B.BIUCR2.R = 0;
+#endif /* !defined(_SPC564A70_) */
 
 #if !SPC5_NO_INIT
   /* PLL activation.*/

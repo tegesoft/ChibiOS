@@ -364,17 +364,6 @@ struct USBDriver {
    */
   const USBConfig               *config;
   /**
-   * @brief   Field available to user, it can be used to associate an
-   *          application-defined handler to the USB driver.
-   */
-  void                          *param;
-  /**
-   * @brief   Additional application-defined field, which is used if the serial_usb
-   *          driver is activated, so that the 'param' variable above is *really* left
-   *          to the user (which can be useful for composite USB)
-   */
-  void                          *serial_param;
-  /**
    * @brief   Bit map of the transmitting IN endpoints.
    */
   uint16_t                      transmitting;
@@ -386,6 +375,20 @@ struct USBDriver {
    * @brief   Active endpoints configurations.
    */
   const USBEndpointConfig       *epc[USB_MAX_ENDPOINTS + 1];
+  /**
+   * @brief   Fields available to user, it can be used to associate an
+   *          application-defined handler to an IN endpoint.
+   * @note    The base index is one, the endpoint zero does not have a
+   *          reserved element in this array.
+   */
+  void                          *in_params[USB_MAX_ENDPOINTS];
+  /**
+   * @brief   Fields available to user, it can be used to associate an
+   *          application-defined handler to an OUT endpoint.
+   * @note    The base index is one, the endpoint zero does not have a
+   *          reserved element in this array.
+   */
+  void                          *out_params[USB_MAX_ENDPOINTS];
   /**
    * @brief   Endpoint 0 state.
    */

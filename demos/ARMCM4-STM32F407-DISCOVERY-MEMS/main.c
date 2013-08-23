@@ -25,7 +25,7 @@
 #include "usbcfg.h"
 
 /* Virtual serial port over USB.*/
-static SerialUSBDriver SDU1;
+SerialUSBDriver SDU1;
 
 /*===========================================================================*/
 /* Command line related.                                                     */
@@ -117,6 +117,7 @@ static const PWMConfig pwmcfg = {
    {PWM_OUTPUT_ACTIVE_HIGH, NULL}
   },
   /* HW dependent part.*/
+  0,
   0
 };
 

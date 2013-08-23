@@ -88,7 +88,57 @@
 *** Releases                                                              ***
 *****************************************************************************
 
+*** 2.7.0 ***
+- FIX: Fixed PAL driver documentation error (bug #427)(backported to 2.6.1
+  and 2.4.5).
+- FIX: Fixed UART4 and 5 marked as not present in STM32F30x devices (bug #426)
+  (backported to 2.6.1).
+- FIX: Fixed warning in STM32 ICU/PWM drivers when used on STM32F3xx
+  (bug #425)(backported to 2.6.1).
+- FIX: Fixed conditional code error in STM32 PWM driver (bug #424)(backported
+  to 2.6.1).
+- FIX: Fixed error in Guards of pwm_lld.h from STM32 (bug #423)(backported to
+  2.6.1).
+- FIX: Fixed wrong RTC macro names in STM32L1xx HAL (bug #422)(backported to
+  2.6.1 and 2.4.5).
+- FIX: Fixed CodeSourcery personal version fails to build with undefined
+  errno_r (bug #421)(backported to 2.6.1).
+- FIX: Fixed FSMC reset on STM32F4xx (bug #420)(backported to 2.6.1 and 2.4.4).
+- FIX: Fixed invalid directory links in the demo files (bug #419)(backported
+  to 2.6.1).
+- FIX: Fixed missing casts in time-conversion macros (bug #418)(backported
+  to 2.6.1, 2.4.4 and 2.2.10).
+- FIX: Fixed PLL2 activation condition is wrong in STM32F107 HAL (bug #417)
+  (backported to 2.6.1 and 2.4.4).
+- FIX: Fixed STM32 Serial (v2) driver invalid CR registers size (bug #416)
+  (backported to 2.6.0).
+- FIX: Fixed MS2ST() and US2ST() macros error (bug #415)(backported to 2.6.0,
+  2.4.4, 2.2.10, NilRTOS).
+- NEW: Improvements to the STM32F4xx backup domain initialization.
+- NEW: Added initializer for the DIER register to the STM32 GPT, ICU and
+  PWM drivers.
+- NEW: Added support for 32bits counters to the STM32 GPT driver.
+- NEW: Added support for STM32F4xx backup RAM.
+- NEW: Added port support for SCP560B64.
+- NEW: Added DAC driver high level files and low level files templates.
+- NEW: Added support of UART4 and UART5 (STM32F4x and STM32F2x platforms)
+  (feature request #28).
+- NEW: SPI driver for SPC560Pxx, SPC563Mxx, SPC564Axx, SPC56ELAxx, SPC560Dxx.
+- NEW: Support for SPC560Dxx devices.
+- NEW: DMA-MUX support for SPC5xx devices.
+- CHANGE: Moved the STM32 GPT, ICU and PWM low level drivers under
+  ./os/hal/platform/STM32/TIMv1. Updated all the impacted project files.
+
 *** 2.5.2 ***
+- FIX: Fixed lwipthread.h should explicitly include lwip/opts.h (bug #414).
+- FIX: Fixed STM32_PLLI2SCLKOUT miscalculated (bug #413)(backported to 2.4.4).
+- FIX: Fixed wrong RTC vector name in STM32F1/F4/L1 EXT drivers (bug #412).
+- FIX: Fixed fill character error in chprintf (bug #411).
+- FIX: Fixed wrong STM32 USBv1 driver behavior (bug #410).
+- FIX: Fixed STM32 wrong peripherals reset procedure (bug #409)(backported
+  to 2.4.4).
+- FIX: Fixed STM32 SPIv2 polled exchange (bug #372).
+- FIX: Fixed wrong macro in PWM driver (bug #407)(backported to 2.4.4).
 - FIX: Fixed USB driver possible deadlock under certain configurations (bug
   #406)(backported to 2.4.4).
 - FIX: Fixed USB driver cannot be stopped (bug #405)(backported to 2.4.4).
@@ -152,7 +202,7 @@
 - NEW: Added new pwmIsChannelEnabledI() API to the PWM driver, implemented
   in the STM32 driver.
 - NEW: Added support for timers 6, 7, 9, 11, 12, 14 to the STM32 GPT driver.
-- NEW: Added support for timer 9 to the STM32 PWM driver.
+- NEW: Added support for timer 9 to the STM32 PWM and ICU drivers.
 - NEW: Relicensed parts of the distribution tree under the Apache 2.0
   license in order to make specific parts of the code more accessible
   to the open source community and adopters.

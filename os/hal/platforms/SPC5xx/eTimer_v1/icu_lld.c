@@ -206,7 +206,6 @@ uint16_t period;
  * @param[in] icup      pointer to the @p ICUDriver object
  */
 static void icu_lld_serve_interrupt(ICUDriver *icup) {
-
   uint16_t sr = icup->etimerp->CHANNEL[icup->smod_number].STS.R &
                 icup->etimerp->CHANNEL[icup->smod_number].INTDMA.R;
 
@@ -287,12 +286,13 @@ static void icu_lld_serve_interrupt(ICUDriver *icup) {
  */
 static void spc5_icu_smod_init(ICUDriver *icup) {
   uint32_t psc = (icup->clock / icup->config->frequency);
+
   chDbgAssert((psc <= 0xFFFF) &&
-              (((psc) * icup->config->frequency) == icup->clock) &&
+              ((psc * icup->config->frequency) == icup->clock) &&
               ((psc == 1) || (psc == 2) || (psc == 4) ||
                (psc == 8) || (psc == 16) || (psc == 32) ||
                (psc == 64) || (psc == 128)),
-              "icu_lld_start(), #1", "invalid frequency");
+              "spc5_icu_smod_init(), #1", "invalid frequency");
 
   /* Set primary source and clock prescaler.*/
   switch (psc) {
@@ -373,7 +373,7 @@ static void spc5_icu_smod_init(ICUDriver *icup) {
   }
 
   /* Direct pointers to the capture registers in order to make reading
-   data faster from within callbacks.*/
+     data faster from within callbacks.*/
   icup->pccrp = &period;
   icup->wccrp = &width;
 
@@ -396,7 +396,8 @@ static void spc5_icu_smod_init(ICUDriver *icup) {
  *          perform an extra check in a potentially critical interrupt handler.
  *
  * @isr
- */CH_IRQ_HANDLER(SPC5_ETIMER0_TC0IR_HANDLER) {
+ */
+CH_IRQ_HANDLER(SPC5_ETIMER0_TC0IR_HANDLER) {
 
   CH_IRQ_PROLOGUE();
 
@@ -790,6 +791,7 @@ CH_IRQ_HANDLER(SPC5_ETIMER2_TC5IR_HANDLER) {
  * @notapi
  */
 void icu_lld_init(void) {
+
   /* Submodules initially all not in use.*/
   icu_active_submodules0 = 0;
   icu_active_submodules1 = 0;
@@ -804,6 +806,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD1);
   ICUD1.etimerp = &SPC5_ETIMER_0;
   ICUD1.smod_number = 0U;
+  ICUD1.clock = SPC5_ETIMER0_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD1
@@ -811,6 +814,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD2);
   ICUD2.etimerp = &SPC5_ETIMER_0;
   ICUD2.smod_number = 1U;
+  ICUD2.clock = SPC5_ETIMER0_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD2
@@ -818,6 +822,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD3);
   ICUD3.etimerp = &SPC5_ETIMER_0;
   ICUD3.smod_number = 2U;
+  ICUD3.clock = SPC5_ETIMER0_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD3
@@ -825,6 +830,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD4);
   ICUD4.etimerp = &SPC5_ETIMER_0;
   ICUD4.smod_number = 3U;
+  ICUD4.clock = SPC5_ETIMER0_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD4
@@ -832,6 +838,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD5);
   ICUD5.etimerp = &SPC5_ETIMER_0;
   ICUD5.smod_number = 4U;
+  ICUD5.clock = SPC5_ETIMER0_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD5
@@ -839,6 +846,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD6);
   ICUD6.etimerp = &SPC5_ETIMER_0;
   ICUD6.smod_number = 5U;
+  ICUD6.clock = SPC5_ETIMER0_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD6
@@ -846,6 +854,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD7);
   ICUD7.etimerp = &SPC5_ETIMER_1;
   ICUD7.smod_number = 0U;
+  ICUD7.clock = SPC5_ETIMER1_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD7
@@ -853,6 +862,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD8);
   ICUD8.etimerp = &SPC5_ETIMER_1;
   ICUD8.smod_number = 1U;
+  ICUD8.clock = SPC5_ETIMER1_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD8
@@ -860,6 +870,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD9);
   ICUD9.etimerp = &SPC5_ETIMER_1;
   ICUD9.smod_number = 2U;
+  ICUD9.clock = SPC5_ETIMER1_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD9
@@ -867,6 +878,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD10);
   ICUD10.etimerp = &SPC5_ETIMER_1;
   ICUD10.smod_number = 3U;
+  ICUD10.clock = SPC5_ETIMER1_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD10
@@ -874,6 +886,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD11);
   ICUD11.etimerp = &SPC5_ETIMER_1;
   ICUD11.smod_number = 4U;
+  ICUD11.clock = SPC5_ETIMER1_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD11
@@ -881,6 +894,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD12);
   ICUD12.etimerp = &SPC5_ETIMER_1;
   ICUD12.smod_number = 5U;
+  ICUD12.clock = SPC5_ETIMER1_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD12
@@ -888,6 +902,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD13);
   ICUD13.etimerp = &SPC5_ETIMER_2;
   ICUD13.smod_number = 0U;
+  ICUD13.clock = SPC5_ETIMER2_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD13
@@ -895,6 +910,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD14);
   ICUD14.etimerp = &SPC5_ETIMER_2;
   ICUD14.smod_number = 1U;
+  ICUD14.clock = SPC5_ETIMER2_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD14
@@ -902,6 +918,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD15);
   ICUD15.etimerp = &SPC5_ETIMER_2;
   ICUD15.smod_number = 2U;
+  ICUD15.clock = SPC5_ETIMER2_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD15
@@ -909,6 +926,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD16);
   ICUD16.etimerp = &SPC5_ETIMER_2;
   ICUD16.smod_number = 3U;
+  ICUD16.clock = SPC5_ETIMER2_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD16
@@ -916,6 +934,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD17);
   ICUD17.etimerp = &SPC5_ETIMER_2;
   ICUD17.smod_number = 4U;
+  ICUD17.clock = SPC5_ETIMER2_CLK;
 #endif
 
 #if SPC5_ICU_USE_SMOD17
@@ -923,6 +942,7 @@ void icu_lld_init(void) {
   icuObjectInit(&ICUD18);
   ICUD18.etimerp = &SPC5_ETIMER_2;
   ICUD18.smod_number = 5U;
+  ICUD18.clock = SPC5_ETIMER2_CLK;
 #endif
 
 #if SPC5_ICU_USE_ETIMER0
@@ -974,9 +994,9 @@ void icu_lld_start(ICUDriver *icup) {
 
   chDbgAssert(icu_active_submodules0 < 6, "icu_lld_start(), #1",
               "too many submodules");
-  chDbgAssert(icu_active_submodules1 < 6, "icu_lld_start(), #1",
+  chDbgAssert(icu_active_submodules1 < 6, "icu_lld_start(), #2",
               "too many submodules");
-  chDbgAssert(icu_active_submodules2 < 6, "icu_lld_start(), #1",
+  chDbgAssert(icu_active_submodules2 < 6, "icu_lld_start(), #3",
               "too many submodules");
 
   if (icup->state == ICU_STOP) {
@@ -1117,11 +1137,12 @@ void icu_lld_start(ICUDriver *icup) {
  * @notapi
  */
 void icu_lld_stop(ICUDriver *icup) {
+
   chDbgAssert(icu_active_submodules0 < 6, "icu_lld_stop(), #1",
               "too many submodules");
-  chDbgAssert(icu_active_submodules1 < 6, "icu_lld_stop(), #1",
+  chDbgAssert(icu_active_submodules1 < 6, "icu_lld_stop(), #2",
               "too many submodules");
-  chDbgAssert(icu_active_submodules2 < 6, "icu_lld_stop(), #1",
+  chDbgAssert(icu_active_submodules2 < 6, "icu_lld_stop(), #3",
               "too many submodules");
 
   if (icup->state == ICU_READY) {
