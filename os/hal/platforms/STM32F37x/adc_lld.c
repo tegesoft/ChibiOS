@@ -15,8 +15,8 @@
 */
 
 /**
- * @file    STM32F4xx/adc_lld.c
- * @brief   STM32F4xx/STM32F2xx ADC subsystem low level driver source.
+ * @file    STM32F37x/adc_lld.c
+ * @brief   STM32F37x ADC subsystem low level driver source.
  *
  * @addtogroup ADC
  * @{
@@ -157,13 +157,13 @@ static void adc_lld_serve_dma_interrupt(ADCDriver *adcp, uint32_t flags) {
     /* It is possible that the conversion group has already be reset by the
        ADC error handler, in this case this interrupt is spurious.*/
     if (adcp->grpp != NULL) {
-      if ((flags & STM32_DMA_ISR_HTIF) != 0) {
-        /* Half transfer processing.*/
-        _adc_isr_half_code(adcp);
-      }
       if ((flags & STM32_DMA_ISR_TCIF) != 0) {
         /* Transfer complete processing.*/
         _adc_isr_full_code(adcp);
+      }
+      else if ((flags & STM32_DMA_ISR_HTIF) != 0) {
+        /* Half transfer processing.*/
+        _adc_isr_half_code(adcp);
       }
     }
   }
@@ -322,7 +322,8 @@ void adc_lld_init(void) {
                   STM32_DMA_CR_MSIZE_HWORD | STM32_DMA_CR_PSIZE_HWORD |
                   STM32_DMA_CR_MINC        | STM32_DMA_CR_TCIE        |
                   STM32_DMA_CR_DMEIE       | STM32_DMA_CR_TEIE;
-  nvicEnableVector(ADC1_IRQn, CORTEX_PRIORITY_MASK(STM32_ADC_IRQ_PRIORITY));
+  nvicEnableVector(ADC1_IRQn,
+                   CORTEX_PRIORITY_MASK(STM32_ADC_ADC1_IRQ_PRIORITY));
 #endif
 
 #if STM32_ADC_USE_SDADC1
@@ -432,7 +433,7 @@ void adc_lld_start(ADCDriver *adcp) {
                                    (void *)adcp);
       chDbgAssert(!b, "adc_lld_start(), #3", "stream already allocated");
       dmaStreamSetPeripheral(adcp->dmastp, &SDADC2->JDATAR);
-      rccEnableSDADC1(FALSE);
+      rccEnableSDADC2(FALSE);
       PWR->CR |= PWR_CR_SDADC2EN;
       adcp->sdadc->CR2 = 0;
       adcp->sdadc->CR1 = (adcp->config->cr1 | SDADC_ENFORCED_CR1_FLAGS) &
@@ -449,7 +450,7 @@ void adc_lld_start(ADCDriver *adcp) {
                                    (void *)adcp);
       chDbgAssert(!b, "adc_lld_start(), #4", "stream already allocated");
       dmaStreamSetPeripheral(adcp->dmastp, &SDADC3->JDATAR);
-      rccEnableSDADC1(FALSE);
+      rccEnableSDADC3(FALSE);
       PWR->CR |= PWR_CR_SDADC3EN;
       adcp->sdadc->CR2 = 0;
       adcp->sdadc->CR1 = (adcp->config->cr1 | SDADC_ENFORCED_CR1_FLAGS) &
@@ -527,11 +528,11 @@ void adc_lld_start_conversion(ADCDriver *adcp) {
   mode = adcp->dmamode;
   if (grpp->circular) {
     mode |= STM32_DMA_CR_CIRC;
-  }
-  if (adcp->depth > 1) {
-    /* If the buffer depth is greater than one then the half transfer interrupt
-       interrupt is enabled in order to allows streaming processing.*/
-    mode |= STM32_DMA_CR_HTIE;
+    if (adcp->depth > 1) {
+      /* If circular buffer depth > 1, then the half transfer interrupt
+         is enabled in order to allow streaming processing.*/
+      mode |= STM32_DMA_CR_HTIE;
+    }
   }
   dmaStreamSetMemory0(adcp->dmastp, adcp->samples);
   dmaStreamSetTransactionSize(adcp->dmastp,
@@ -588,11 +589,16 @@ void adc_lld_start_conversion(ADCDriver *adcp) {
     adcp->sdadc->CONFCHR1 = grpp->u.sdadc.confchr[0];
     adcp->sdadc->CONFCHR2 = grpp->u.sdadc.confchr[1];
 
+    /* SDADC trigger modes, this write must be performed when
+       SDADC_CR1_INIT=1.*/
+    adcp->sdadc->CR2 = cr2;
+
     /* Leaving initialization mode.*/
     adcp->sdadc->CR1 &= ~SDADC_CR1_INIT;
 
-    /* SDADC conversion start, the start is performed using the method
-       specified in the CR2 configuration, usually SDADC_CR2_JSWSTART.*/
+    /* Special case, if SDADC_CR2_JSWSTART is specified it has to be
+       written after SDADC_CR1_INIT has been set to zero. Just a write is
+       performed, any other bit is ingore if not in initialization mode.*/
     adcp->sdadc->CR2 = cr2;
   }
 #endif /* STM32_ADC_USE_SDADC */

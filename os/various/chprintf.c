@@ -13,8 +13,10 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
+
 /*
-   Concepts and parts of this file have been contributed by Fabio Utzig.
+   Concepts and parts of this file have been contributed by Fabio Utzig,
+   chvprintf() added by Brent Roman.
  */
 
 /**
@@ -25,10 +27,9 @@
  * @{
  */
 
-#include <stdarg.h>
-
 #include "ch.h"
 #include "chprintf.h"
+#include "memstreams.h"
 
 #define MAX_FILLER 11
 #define FLOAT_PRECISION 100000
@@ -76,17 +77,17 @@ static char *ftoa(char *p, double num) {
   long l;
   unsigned long precision = FLOAT_PRECISION;
 
-  l = num;
+  l = (long)num;
   p = long_to_string_with_divisor(p, l, 10, 0);
   *p++ = '.';
-  l = (num - l) * precision;
+  l = (long)((num - l) * precision);
   return long_to_string_with_divisor(p, l, 10, precision / 10);
 }
 #endif
 
 /**
  * @brief   System formatted output function.
- * @details This function implements a minimal @p printf() like functionality
+ * @details This function implements a minimal @p vprintf()-like functionality
  *          with output on a @p BaseSequentialStream.
  *          The general parameters format is: %[-][width|*][.precision|*][l|L]p.
  *          The following parameter types (p) are supported:
@@ -104,9 +105,11 @@ static char *ftoa(char *p, double num) {
  *
  * @param[in] chp       pointer to a @p BaseSequentialStream implementing object
  * @param[in] fmt       formatting string
+ * @param[in] ap        list of parameters
+ *
+ * @api
  */
-void chprintf(BaseSequentialStream *chp, const char *fmt, ...) {
-  va_list ap;
+void chvprintf(BaseSequentialStream *chp, const char *fmt, va_list ap) {
   char *p, *s, c, filler;
   int i, precision, width;
   bool_t is_long, left_align;
@@ -118,13 +121,10 @@ void chprintf(BaseSequentialStream *chp, const char *fmt, ...) {
   char tmpbuf[MAX_FILLER + 1];
 #endif
 
-  va_start(ap, fmt);
   while (TRUE) {
     c = *fmt++;
-    if (c == 0) {
-      va_end(ap);
+    if (c == 0)
       return;
-    }
     if (c != '%') {
       chSequentialStreamPut(chp, (uint8_t)c);
       continue;
@@ -250,14 +250,58 @@ unsigned_common:
         chSequentialStreamPut(chp, (uint8_t)filler);
       while (++width != 0);
     }
-    while (--i >= 0)
-      chSequentialStreamPut(chp, (uint8_t)*s++);
+    chSequentialStreamWrite(chp, (uint8_t*)s, i);
+    s += i;
 
     while (width) {
       chSequentialStreamPut(chp, (uint8_t)filler);
       width--;
     }
   }
+}
+
+/**
+ * @brief   System formatted output function.
+ * @details This function implements a minimal @p vprintf()-like functionality
+ *          with output on a @p BaseSequentialStream.
+ *          The general parameters format is: %[-][width|*][.precision|*][l|L]p.
+ *          The following parameter types (p) are supported:
+ *          - <b>x</b> hexadecimal integer.
+ *          - <b>X</b> hexadecimal long.
+ *          - <b>o</b> octal integer.
+ *          - <b>O</b> octal long.
+ *          - <b>d</b> decimal signed integer.
+ *          - <b>D</b> decimal signed long.
+ *          - <b>u</b> decimal unsigned integer.
+ *          - <b>U</b> decimal unsigned long.
+ *          - <b>c</b> character.
+ *          - <b>s</b> string.
+ *          .
+ *
+ * @param[in] str       pointer to a buffer
+ * @param[in] size      maximum size of the buffer
+ * @param[in] fmt       formatting string
+ * @return              The size of the generated string.
+ *
+ * @api
+ */
+int chsnprintf(char *str, size_t size, const char *fmt, ...) {
+  va_list ap;
+  MemoryStream ms;
+  BaseSequentialStream *chp;
+
+  /* Memory stream object to be used as a string writer.*/
+  msObjectInit(&ms, (uint8_t *)str, size, 0);
+
+  /* Performing the print operation using the common code.*/
+  chp = (BaseSequentialStream *)&ms;
+  va_start(ap, fmt);
+  chvprintf(chp, fmt, ap);
+  va_end(ap);
+
+  /* Final zero and size return.*/
+  chSequentialStreamPut(chp, 0);
+  return ms.eos - 1;
 }
 
 /** @} */

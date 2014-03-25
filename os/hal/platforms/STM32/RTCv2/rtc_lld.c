@@ -20,7 +20,7 @@
 
 /**
  * @file    STM32/RTCv2/rtc_lld.c
- * @brief   STM32L1xx/STM32F2xx/STM32F4xx RTC low level driver.
+ * @brief   RTC low level driver.
  *
  * @addtogroup RTC
  * @{
@@ -64,10 +64,10 @@ RTCDriver RTCD1;
  *
  * @notapi
  */
-#define rtc_lld_enter_init() {                                                \
-  RTCD1.id_rtc->ISR |= RTC_ISR_INIT;                                          \
-  while ((RTCD1.id_rtc->ISR & RTC_ISR_INITF) == 0)                            \
-    ;                                                                         \
+#define rtc_lld_enter_init() {                                              \
+  RTCD1.id_rtc->ISR |= RTC_ISR_INIT;                                        \
+  while ((RTCD1.id_rtc->ISR & RTC_ISR_INITF) == 0)                          \
+    ;                                                                       \
 }
 
 /**
@@ -164,16 +164,17 @@ void rtc_lld_get_time(RTCDriver *rtcp, RTCTime *timespec) {
  * @note      Default value after BKP domain reset for both comparators is 0.
  * @note      Function does not performs any checks of alarm time validity.
  *
- * @param[in] rtcp      Pointer to RTC driver structure.
- * @param[in] alarm     Alarm identifier. Can be 1 or 2.
- * @param[in] alarmspec Pointer to a @p RTCAlarm structure.
+ * @param[in] rtcp      pointer to RTC driver structure
+ * @param[in] alarm     alarm identifier starting from zero
+ * @param[in] alarmspec pointer to a @p RTCAlarm structure
  *
  * @api
  */
 void rtc_lld_set_alarm(RTCDriver *rtcp,
                        rtcalarm_t alarm,
                        const RTCAlarm *alarmspec) {
-  if (alarm == 1){
+
+  if (alarm == 0) {
     if (alarmspec != NULL){
       rtcp->id_rtc->CR &= ~RTC_CR_ALRAE;
       while(!(rtcp->id_rtc->ISR & RTC_ISR_ALRAWF))
@@ -187,6 +188,7 @@ void rtc_lld_set_alarm(RTCDriver *rtcp,
       rtcp->id_rtc->CR &= ~RTC_CR_ALRAE;
     }
   }
+#if RTC_ALARMS == 2
   else{
     if (alarmspec != NULL){
       rtcp->id_rtc->CR &= ~RTC_CR_ALRBE;
@@ -201,13 +203,14 @@ void rtc_lld_set_alarm(RTCDriver *rtcp,
       rtcp->id_rtc->CR &= ~RTC_CR_ALRBE;
     }
   }
+#endif /* RTC_ALARMS == 2 */
 }
 
 /**
  * @brief   Get alarm time.
  *
  * @param[in] rtcp       pointer to RTC driver structure
- * @param[in] alarm      alarm identifier
+ * @param[in] alarm      alarm identifier starting from zero
  * @param[out] alarmspec pointer to a @p RTCAlarm structure
  *
  * @api
@@ -215,10 +218,13 @@ void rtc_lld_set_alarm(RTCDriver *rtcp,
 void rtc_lld_get_alarm(RTCDriver *rtcp,
                        rtcalarm_t alarm,
                        RTCAlarm *alarmspec) {
-  if (alarm == 1)
+
+  if (alarm == 0)
     alarmspec->tv_datetime = rtcp->id_rtc->ALRMAR;
+#if RTC_ALARMS == 2
   else
     alarmspec->tv_datetime = rtcp->id_rtc->ALRMBR;
+#endif
 }
 
 /**
@@ -231,7 +237,8 @@ void rtc_lld_get_alarm(RTCDriver *rtcp,
  *
  * @api
  */
-void rtcSetPeriodicWakeup_v2(RTCDriver *rtcp, RTCWakeup *wakeupspec){
+#if RTC_HAS_PERIODIC_WAKEUPS
+void rtcSetPeriodicWakeup_v2(RTCDriver *rtcp, const RTCWakeup *wakeupspec){
   chDbgCheck((wakeupspec->wakeup != 0x30000),
               "rtc_lld_set_periodic_wakeup, forbidden combination");
 
@@ -249,6 +256,7 @@ void rtcSetPeriodicWakeup_v2(RTCDriver *rtcp, RTCWakeup *wakeupspec){
     rtcp->id_rtc->CR &= ~RTC_CR_WUTE;
   }
 }
+#endif /* RTC_HAS_PERIODIC_WAKEUPS */
 
 /**
  * @brief     Gets time of periodic wakeup.
@@ -260,11 +268,13 @@ void rtcSetPeriodicWakeup_v2(RTCDriver *rtcp, RTCWakeup *wakeupspec){
  *
  * @api
  */
+#if RTC_HAS_PERIODIC_WAKEUPS
 void rtcGetPeriodicWakeup_v2(RTCDriver *rtcp, RTCWakeup *wakeupspec){
   wakeupspec->wakeup  = 0;
   wakeupspec->wakeup |= rtcp->id_rtc->WUTR;
   wakeupspec->wakeup |= (((uint32_t)rtcp->id_rtc->CR) & 0x7) << 16;
 }
+#endif /* RTC_HAS_PERIODIC_WAKEUPS */
 
 /**
  * @brief   Get current time in format suitable for usage in FatFS.
