@@ -5,7 +5,7 @@ set(OPENOCD_TARGET_CFG "" CACHE FILEPATH "OpenOCD target/board configuration fil
 # try to locate OpenOCD
 find_program(
     OPENOCD_EXE
-    NAMES openocd openocd-0.6.0 openocd-0.6.1 openocd.exe openocd-0.6.0.exe openocd-0.6.1.exe
+    NAMES openocd openocd-0.6.0 openocd-0.6.1 openocd-0.8.0
     PATHS ${OPENOCD_ROOT}
     DOC "OpenOCD program"
 )
@@ -46,6 +46,7 @@ macro(add_flash_and_run_target target_to_flash)
     create_openocd_target(
         flash-and-run-${target_to_flash}
         ${target_to_flash}
+        -c \"debug_level 3\"
         -c \"init\"
         -c \"reset init\"
         -c \"flash write_image erase ${TARGET_LOCATION}\"
